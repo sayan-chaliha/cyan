@@ -56,8 +56,18 @@ public:
   using backend_traits_type = T;
   using native_handle_type = typename backend_traits_type::loop::native_handle_type;
 
+  ~basic_loop() {
+    stop();
+  }
+
   explicit basic_loop(basic_loop&& other) : native_handle_{ std::move(other.native_handle_) } {
     other.native_handle_ = nullptr;
+  }
+
+  basic_loop& operator =(basic_loop&& other) {
+    native_handle_ = other.native_handle_;
+    other.native_handle_ = nullptr;
+    return *this;
   }
 
   native_handle_type native_handle() const {
@@ -76,7 +86,7 @@ public:
     return owner_thread_;
   }
 
-private:
+protected:
   friend std::shared_ptr<basic_loop<T>> cyan::event::get_main_loop();
   friend std::shared_ptr<basic_loop<T>> cyan::this_thread::get_event_loop();
 
@@ -84,6 +94,7 @@ private:
         owner_thread_{ std::this_thread::get_id() } {
   }
 
+private:
   std::unique_ptr<typename std::remove_pointer<native_handle_type>::type,
       void (*)(native_handle_type)> native_handle_;
   std::thread::id owner_thread_;

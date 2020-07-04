@@ -40,13 +40,18 @@ std::shared_ptr<thread_pool> global_concurrent_pool() {
 }
 
 thread_pool::thread_pool(std::uint32_t size) : size_{ std::max(size, 1u) } {
-  for (std::uint32_t i = 0; i < size_; i++) {
-    threads_.emplace_back(std::make_unique<cyan::dispatch::handler_thread>());
-  }
+  start();
 }
 
 thread_pool::~thread_pool() {
   stop();
+}
+
+void thread_pool::start() {
+  if (threads_.size()) return;
+  for (std::uint32_t i = 0; i < size_; i++) {
+    threads_.emplace_back(std::make_unique<cyan::dispatch::handler_thread>());
+  }
 }
 
 void thread_pool::stop() {

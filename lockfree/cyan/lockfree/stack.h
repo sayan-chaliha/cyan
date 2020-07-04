@@ -29,15 +29,20 @@
 
 #include <cyan/utility.h>
 #include <cyan/noncopyable.h>
+#include <cyan/lockfree/freelist.h>
 
 namespace cyan::lockfree {
 
 template<typename T, typename Alloc = std::allocator<T>>
 class stack : public cyan::noncopyable {
 private:
+  static_assert(std::is_move_constructible<T>::value);
+  static_assert(std::is_move_assignable<T>::value);
+
   struct alignas(std::hardware_destructive_interference_size) node {
     node() : next{ nullptr } {}
-    node(T&& value) : data{ std::forward<T>(value) }, node() {}
+    node(T const& value) : next{ nullptr }, data{ value } {}
+    node(T&& value) : next{ nullptr }, data{ std::forward<T>(value) } {}
 
     node* next;
     T data;
@@ -51,8 +56,10 @@ public:
   using size_type = typename allocator_type::size_type;
   using reference = value_type&;
   using const_reference = value_type const&;
+  using pool_type = detail::freelist<node_type, node_allocator_type>;
 
-  stack(allocator_type const& alloc = std::allocator<value_type>()) : node_allocator_{ alloc } {
+  stack(allocator_type const& alloc = std::allocator<value_type>()) : pool_{ alloc } {
+    head_.store(nullptr, std::memory_order_release);
   }
 
   ~stack() {
@@ -60,26 +67,45 @@ public:
   }
 
   allocator_type get_allocator() const {
-    return allocator_type(node_allocator_);
+    return pool_.get_allocator();
   }
 
   void push(value_type&& value) {
-    node_type* n = node_allocator_.allocate(1);
+    node_type* n = pool_.allocate();
     new (n) node_type{ std::forward<value_type>(value) };
     n->next = head_.load(std::memory_order_relaxed);
 
-    while (head_.compare_exchange_weak(n->next, n, std::memory_order_acq_rel, std::memory_order_relaxed));
+    while (!head_.compare_exchange_weak(n->next, n, std::memory_order_acq_rel, std::memory_order_relaxed));
+  }
+
+  void push(const_reference value) {
+    node_type* n = pool_.allocate();
+    new (n) node_type{ value };
+    n->next = head_.load(std::memory_order_relaxed);
+
+    while (!head_.compare_exchange_weak(n->next, n, std::memory_order_acq_rel, std::memory_order_relaxed));
+  }
+
+  template<typename ...Args>
+  void emplace(Args&&... args) {
+    node_type* n = pool_.allocate();
+    new (n) node_type{ value_type{ std::forward<Args>(args)... }};
+    n->next = head_.load(std::memory_order_relaxed);
+
+    while (!head_.compare_exchange_weak(n->next, n, std::memory_order_acq_rel, std::memory_order_relaxed));
   }
 
   bool try_pop(reference value) {
-    auto head = head_.load(std::memory_order_relaxed);
-    while (head_.compare_exchange_weak(head, head->next, std::memory_order_acq_rel, std::memory_order_relaxed));
-
+    auto head = head_.load(std::memory_order_acquire);
     if (!head) return false;
+
+    while (!head_.compare_exchange_weak(head, head->next, std::memory_order_acq_rel, std::memory_order_relaxed)) {
+      if (!head) return false;
+    }
 
     value = std::move(head->data);
     head->~node_type();
-    node_allocator_.deallocate(head, 1);
+    pool_.deallocate(head);
 
     return true;
   }
@@ -89,20 +115,23 @@ public:
   }
 
   void clear() {
-    auto head = head_.load(std::memory_order_relaxed);
-    while (head_.compare_exchange_weak(head, nullptr, std::memory_order_acq_rel, std::memory_order_relaxed));
+    auto head = head_.load(std::memory_order_acquire);
+    while (!head_.compare_exchange_weak(head, nullptr, std::memory_order_acq_rel, std::memory_order_relaxed));
 
     while (head) {
       auto n = head;
-      head = head->next.load(std::memory_order_relaxed);
+      head = head->next;
       n->~node_type();
-      node_allocator_.deallocate(n, 1);
+      pool_.deallocate(n);
     }
   }
 
 private:
+  alignas(std::hardware_destructive_interference_size)
   std::atomic<node_type*> head_;
-  node_allocator_type node_allocator_;
+  
+  alignas(std::hardware_destructive_interference_size)
+  pool_type pool_;
 };
 
 }

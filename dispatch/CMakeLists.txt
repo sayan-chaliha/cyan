@@ -19,7 +19,9 @@ set(SOURCES
     cyan/dispatch/thread_pool.cxx
     cyan/dispatch/serial_token.cxx
 )
-
+set(SOURCES_TEST
+    test/async_tests.cxx
+)
 
 add_library(${LIB_NAME} STATIC ${SOURCES})
 
@@ -36,11 +38,4 @@ target_include_directories(${LIB_NAME} PUBLIC
 install_headers("${HEADERS}")
 install(TARGETS ${LIB_NAME})
 
-### TEST ###
-#set(SOURCES_TEST
-#    test/event_tests.cxx
-#)
-#
-#add_executable(${LIB_NAME}_test ${SOURCES_TEST})
-#target_link_libraries(${LIB_NAME}_test gtest)
-#gtest_discover_tests(${LIB_NAME}_test)
+add_test(${LIB_NAME}_test SOURCES ${SOURCES_TEST} LIBRARIES ${LIB_NAME})

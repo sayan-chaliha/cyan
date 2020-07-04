@@ -44,17 +44,23 @@ public:
   using const_reference = value_type const&;
 
   freelist(allocator_type const& alloc = std::allocator<value_type>(), std::size_t max_size = 1000lu)
-        : max_size_{ max_size }, size_{ 0 },  head_{ nullptr }, allocator_{ alloc } {
+        : max_size_{ max_size }, head_{ nullptr }, allocator_{ alloc } {
+    size_.store(0, std::memory_order_release);
     for (std::size_t i = 0; i < max_size_; i++) {
       deallocate(allocator_.allocate(1));
     }
   }
 
   ~freelist() {
-    node* head = head_.load(std::memory_order_relaxed);
-    while (head_.compare_exchange_weak(head, head->next, std::memory_order_relaxed, std::memory_order_relaxed)) {
-      if (!head) break;
-      allocator_.deallocate(reinterpret_cast<pointer>(head), 1);
+    if (max_size_ == 0) return;
+    assert(size_.load(std::memory_order_acquire) == max_size_ && "freelist: nodes allocated were not deallocated");
+
+    node* head = head_.load(std::memory_order_acquire);
+    assert(head != nullptr);
+    while (head) {
+      node* n = head;
+      head = head->next;
+      allocator_.deallocate(reinterpret_cast<pointer>(n), 1);
     }
   }
 
@@ -65,7 +71,7 @@ public:
     }
     while (!head_.compare_exchange_weak(head, head->next, std::memory_order_acq_rel, std::memory_order_relaxed));
 
-    size_--;
+    size_.fetch_sub(1, std::memory_order_relaxed);
     return reinterpret_cast<pointer>(head);
   }
 
@@ -78,7 +84,7 @@ public:
     node* n = reinterpret_cast<node*>(value);
     n->next = head_.load(std::memory_order_consume);
     while (!head_.compare_exchange_weak(n->next, n, std::memory_order_acq_rel, std::memory_order_relaxed));
-    size_++;
+    size_.fetch_add(1, std::memory_order_relaxed);
   }
 
   void reserve(std::size_t size) {

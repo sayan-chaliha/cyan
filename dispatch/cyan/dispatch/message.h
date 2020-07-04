@@ -125,7 +125,7 @@ make_payload_message(T&& payload, std::chrono::milliseconds timeout = std::chron
 template<typename C>
 std::unique_ptr<message>
 make_callable_message(C&& callable, std::chrono::milliseconds timeout = std::chrono::milliseconds(0)) {
-  std::unique_ptr<message> msg = std::unique_ptr<message>{ new callable_message{ std::forward<C>(callable) } };
+  std::unique_ptr<message> msg = std::unique_ptr<message>{ new callable_message<C>{ std::forward<C>(callable) } };
   msg->set_timeout(timeout);
   return msg;
 }

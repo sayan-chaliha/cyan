@@ -38,6 +38,7 @@ public:
   thread_pool(std::uint32_t size = std::thread::hardware_concurrency());
   ~thread_pool();
 
+  void start();
   void stop();
 
   template<typename Callable>

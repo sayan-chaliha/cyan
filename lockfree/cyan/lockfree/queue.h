@@ -34,10 +34,7 @@
 
 namespace cyan::lockfree {
 
-template<
-  typename T,
-  typename Alloc = std::allocator<T>
->
+template<typename T, typename Alloc = std::allocator<T>>
 class queue : public cyan::noncopyable {
 private:
   static_assert(std::is_move_constructible<T>::value);
@@ -49,6 +46,7 @@ private:
     constexpr static handle_type null_handle = handle_type();
 
     node() : next{ tagged_handle_type{ null_handle, 0 } } {}
+    node(T const& value) : next{ tagged_handle_type{ null_handle, 0 } }, data{ value } {}
     node(T&& value) : next{ tagged_handle_type{ null_handle, 0 } }, data{ std::forward<T>(value) } {}
 
     std::atomic<tagged_handle_type> next;
@@ -73,7 +71,17 @@ public:
   }
 
   ~queue() {
-    clear();
+    auto head = head_.load(std::memory_order_acquire);
+    auto tail = tail_.load(std::memory_order_acquire);
+
+    while (head.get_ptr() != tail.get_ptr()) {
+      node* n = head.get_ptr();
+      head = head->next.load(std::memory_order_acquire);
+      n->~node();
+      pool_.deallocate(n);
+    }
+    tail.get_ptr()->~node();
+    pool_.deallocate(tail.get_ptr());
   }
 
   allocator_type get_allocator() const {
@@ -148,7 +156,8 @@ public:
       n->~node();
       pool_.deallocate(n);
     }
-    tail->data.~value_type();
+    tail->~node();
+    pool_.deallocate(tail);
 
     initialize();
   }
@@ -160,7 +169,7 @@ private:
     node* n = pool_.allocate();
     new (n) node{};
     tagged_node_handle_type dummy{ n, 0 };
-    head_.store(dummy, std::memory_order_relaxed);
+    head_.store(dummy, std::memory_order_release);
     tail_.store(dummy, std::memory_order_release);
   }
 

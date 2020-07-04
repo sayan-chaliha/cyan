@@ -9,6 +9,10 @@ set(HEADERS
     cyan/lockfree/tagged_ptr.h
     cyan/lockfree/freelist.h
 )
+set(SOURCES_TEST
+    test/queue_tests.cxx
+    test/stack_tests.cxx
+)
 
 add_library(${LIB_NAME} INTERFACE)
 
@@ -21,11 +25,4 @@ target_include_directories(${LIB_NAME} INTERFACE
 target_link_libraries(${LIB_NAME} INTERFACE ${PROJECT_NAME}_common)
 
 install_headers("${HEADERS}")
-
-### TEST ###
-#set(SOURCES_TEST
-#)
-#
-#add_executable(${LIB_NAME}_test ${SOURCES_TEST})
-#target_link_libraries(${LIB_NAME}_test gtest)
-#gtest_discover_tests(${LIB_NAME}_test)
+add_test(${LIB_NAME}_test SOURCES ${SOURCES_TEST} LIBRARIES ${LIB_NAME})

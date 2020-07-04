@@ -51,9 +51,8 @@ public:
 
   handler_thread_impl(handler& h) : handler_{ &h },
         queue_{ std::make_unique<queue_type>() },
+        stopping_{ false }, running_{ false },
         thread_{ &handler_thread_impl::execute, this } {
-    stopping_.store(false, std::memory_order_release);
-    running_.store(false, std::memory_order_release);
   }
 
   ~handler_thread_impl() {
