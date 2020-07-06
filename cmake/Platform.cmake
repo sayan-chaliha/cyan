@@ -7,6 +7,9 @@ include(CheckSymbolExists)
 include(CheckTypeSize)
 include(CheckCXXSourceCompiles)
 
+# Find Boost
+find_package(Boost)
+
 # Setting HAVE_STRUCT_<name>
 FUNCTION(check_struct_size type defbase)
   check_type_size("struct ${type}" SIZEOF_${defbase})
