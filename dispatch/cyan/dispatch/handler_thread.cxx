@@ -148,10 +148,10 @@ private:
           enqueue(std::move(msg));
         }
       }
+    }
 
-      if (is_stopping() && queue_->empty()) {
-        cyan::this_thread::get_event_loop()->stop();
-      }
+    if (is_stopping() && queue_->empty()) {
+      cyan::this_thread::get_event_loop()->stop();
     }
   }
 

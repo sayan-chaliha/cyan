@@ -36,6 +36,15 @@ Here are the results of running the ```factorial_benchmark``` found in the ```ex
 > Target: x86_64-apple-darwin19.5.0  
 > Thread model: posix  
 > InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin  
+
+Here are results for running ```boost_asio_benchmark``` using ```boost::asio::io_context``` running on separate thread vs a ```cyan::handler_thread```.
+> % ./examples/boost_asio_benchmark  
+> ---- test 1 using handler_thread ----  
+> Execution time: 9108ms  
+> Call count: 30000000  
+> ---- test 2 using boost::asio ----  
+> Execution time: 16059ms  
+> Call count: 30000000  
 ## Building
 ```
 % mkdir -p build
