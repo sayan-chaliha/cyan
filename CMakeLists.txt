@@ -42,6 +42,7 @@ install(FILES ${PROJECT_BINARY_DIR}/${PROJECT_NAME}/config.h DESTINATION include
 add_subdirectory(common)
 add_subdirectory(lockfree)
 add_subdirectory(event)
+add_subdirectory(messages)
 add_subdirectory(dispatch)
 
 # Examples

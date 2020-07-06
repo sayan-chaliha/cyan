@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+
+package cyan.rpc;
+
+message request {
+  string version = 1;
+  string service = 2;
+  string method = 3;
+  google.protobuf.Any params = 4;
+  int32 id = 5;
+}
+
+message error {
+  int32 code = 1;
+  string message = 2;
+}
+
+message response {
+  string version = 1;
+  oneof payload {
+    google.protobuf.Any result = 2;
+    error error = 3;
+  }
+  int32 id = 4;
+}
+
