@@ -27,8 +27,6 @@
 
 #include <cyan/net/detail/platform.h>
 
-#define CYAN_OS_DEF_INADDR_ANY INADDR_ANY
-
 namespace cyan::net::detail {
 
 #ifdef HAVE_STRUCT_SOCKADDR

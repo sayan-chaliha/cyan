@@ -33,6 +33,9 @@ public:
   endpoint(std::int32_t family, std::uint16_t port) noexcept;
   endpoint(cyan::net::ip::address const& addr, std::uint16_t port) noexcept;
 
+  endpoint& operator =(endpoint const&) = default;
+  endpoint& operator =(endpoint&&) = default;
+
   std::uint16_t get_port() const noexcept;
   void set_port(std::uint16_t port) noexcept;
 

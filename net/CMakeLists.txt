@@ -12,6 +12,9 @@ set(HEADERS
     cyan/net/ip/address.h
     cyan/net/ip/basic_endpoint.h
     cyan/net/ip/tcp.h
+    cyan/net/socket_base.h
+    cyan/net/basic_socket.h
+    cyan/net/ip/basic_stream_socket.h
 )
 set(SOURCES
     ${HEADERS}

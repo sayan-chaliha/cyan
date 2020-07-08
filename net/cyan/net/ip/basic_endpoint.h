@@ -33,7 +33,7 @@ public:
   using protocol_type = Protocol;
   using data_type = cyan::net::detail::sockaddr_type;
 
-  basic_endpoint() noexcept = delete;
+  basic_endpoint() noexcept = default;
   basic_endpoint(basic_endpoint const&) noexcept = default;
   basic_endpoint(basic_endpoint&&) noexcept = default;
 
@@ -42,6 +42,9 @@ public:
 
   basic_endpoint(address const& addr, std::uint16_t port) noexcept : impl_{ addr, port } {
   }
+
+  basic_endpoint& operator =(basic_endpoint const&) = default;
+  basic_endpoint& operator =(basic_endpoint&&) = default;
 
   protocol_type protocol() const noexcept {
     if (impl_.is_v4()) return protocol_type::v4();

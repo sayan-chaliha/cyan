@@ -42,7 +42,7 @@ address_v4::uint_type address_v4::to_uint() const noexcept {
 std::string address_v4::to_string() const {
   std::error_code ec;
   auto addr = net::detail::inet_ntop(CYAN_OS_DEF(AF_INET), &addr_, ec);
-  if (ec) throw ec;
+  if (ec) throw std::system_error{ ec };
   return addr;
 }
 
@@ -61,7 +61,7 @@ bool address_v4::is_multicast() const noexcept {
 address_v4 make_address_v4(std::string_view addr_str) {
   std::error_code ec;
   address_v4 addr = make_address_v4(addr_str, ec);
-  if (ec) throw ec;
+  if (ec) throw std::system_error{ ec };
   return addr;
 }
 

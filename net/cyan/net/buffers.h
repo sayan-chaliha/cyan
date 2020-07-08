@@ -23,41 +23,58 @@
  **/
 #pragma once
 
-#include <cyan/net/detail/platform.h>
-#include <cyan/net/ip/basic_endpoint.h>
-#include <cyan/net/ip/basic_stream_socket.h>
+namespace cyan::net {
 
-namespace cyan::net::ip {
-
-class tcp {
+class mutable_buffer {
 public:
-  using endpoint_type = basic_endpoint<tcp>;
-  using socket_type = basic_stream_socket<tcp>;
-
-  static tcp v4() noexcept {
-    return tcp{ CYAN_OS_DEF(AF_INET) };
+  mutable_buffer() noexcept : data_{ nullptr }, size_{ 0 } {
   }
 
-  static tcp v6() noexcept {
-    return tcp{ CYAN_OS_DEF(AF_INET6) };
+  mutable_buffer(void* data, std::size_t size) noexcept : data_{ data }, size_{ size } {
   }
 
-  std::int32_t family() const noexcept {
-    return family_;
+  template<typename Container>
+  mutable_buffer(Container& container) noexcept : data_{ container.data() },
+        size_{ container.capacity() * sizeof(typename Container::value_type) } {
   }
 
-  constexpr std::int32_t type() const noexcept {
-    return CYAN_OS_DEF(SOCK_STREAM);
+  void* data() noexcept {
+    return data_;
   }
 
-  constexpr std::int32_t protocol() const noexcept {
-    return CYAN_OS_DEF(IPPROTO_TCP);
+  std::size_t size() const noexcept {
+    return size_;
   }
 
-protected:
-  tcp(std::int32_t family) noexcept : family_{ family } {}
+private:
+  void* data_;
+  std::size_t size_;
+};
 
-  std::int32_t family_;
+class const_buffer {
+public:
+  const_buffer() noexcept : data_{ nullptr }, size_{ 0 } {
+  }
+
+  const_buffer(void const* data, std::size_t size) noexcept : data_{ data }, size_{ size } {
+  }
+
+  template<typename Container>
+  const_buffer(Container& container) noexcept : data_{ container.data() },
+        size_{ container.capacity() * sizeof(typename Container::value_type) } {
+  }
+
+  void const* data() const noexcept {
+    return data_;
+  }
+
+  std::size_t size() const noexcept {
+    return size_;
+  }
+
+private:
+  void const* data_;
+  std::size_t size_;
 };
 
 }

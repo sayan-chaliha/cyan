@@ -84,7 +84,7 @@ bool address::is_multicast() const noexcept {
 address make_address(std::string_view addr_str) {
   std::error_code ec;
   address addr = make_address(addr_str, ec);
-  if (ec) throw ec;
+  if (ec) throw std::system_error{ ec };
   return addr;
 }
 

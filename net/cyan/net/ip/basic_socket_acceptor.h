@@ -1,3 +1,4 @@
+
 /**
  * The MIT License (MIT)
  *
@@ -23,41 +24,36 @@
  **/
 #pragma once
 
-#include <cyan/net/detail/platform.h>
-#include <cyan/net/ip/basic_endpoint.h>
-#include <cyan/net/ip/basic_stream_socket.h>
+#include <cyan/net/socket_base.h>
 
 namespace cyan::net::ip {
 
-class tcp {
+template<typename Protocol>
+class basic_socket_acceptor : public cyan::net::socket_base {
 public:
-  using endpoint_type = basic_endpoint<tcp>;
-  using socket_type = basic_stream_socket<tcp>;
+  using protocol_type = Protocol;
+  using native_handle_type = cyan::net::detail::socket_type;
+  using endpoint_type = typename protocol_type::endpoint_type;
 
-  static tcp v4() noexcept {
-    return tcp{ CYAN_OS_DEF(AF_INET) };
+  basic_socket_acceptor() noexcept = default;
+
+  basic_socket_acceptor(native_handle_type native_handle) noexcept : base{ native_handle } {
   }
 
-  static tcp v6() noexcept {
-    return tcp{ CYAN_OS_DEF(AF_INET6) };
+  basic_socket_acceptor(protocol_type const& protocol) : base{ protocol } {
   }
 
-  std::int32_t family() const noexcept {
-    return family_;
+  basic_socket_acceptor(endpoint_type const& endpoint) : base{ endpoint } {
   }
 
-  constexpr std::int32_t type() const noexcept {
-    return CYAN_OS_DEF(SOCK_STREAM);
-  }
+  basic_socket_acceptor(basic_socket_acceptor&&) = default;
+  basic_socket_acceptor& operator =(basic_socket_acceptor&&) = default;
 
-  constexpr std::int32_t protocol() const noexcept {
-    return CYAN_OS_DEF(IPPROTO_TCP);
-  }
+  ~basic_socket_acceptor() = default;
+
+  
 
 protected:
-  tcp(std::int32_t family) noexcept : family_{ family } {}
-
-  std::int32_t family_;
 };
 
-}
+} // cyan::net

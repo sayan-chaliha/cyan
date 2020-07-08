@@ -25,7 +25,7 @@
 #pragma once
 
 #include <cyan/noncopyable.h>
-#include <cyan/net/detail/socket_base.h>
+#include <cyan/net/socket_base.h>
 
 namespace cyan::net {
 
@@ -47,18 +47,19 @@ public:
   }
 
   basic_socket(endpoint_type const& endpoint) {
+    open(endpoint.protocol());
     bind(endpoint);
   }
 
   basic_socket(basic_socket&& other) noexcept : native_handle_{ other.native_handle_ },
         local_endpoint_{ std::move(other.local_endpoint_) },
-        remote_endpoint_{ std::move(other.remote_endpoint_ } {
-    other.native_handle_ = invalid_socket;
+        remote_endpoint_{ std::move(other.remote_endpoint_) } {
+    other.native_handle_ = cyan::net::detail::invalid_socket;
   }
 
-  basic_socket& basic_socket::operator =(basic_socket&& other) noexcept {
+  basic_socket& operator =(basic_socket&& other) noexcept {
     native_handle_ = other.native_handle_;
-    other.native_handle_ = invalid_socket;
+    other.native_handle_ = cyan::net::detail::invalid_socket;
     local_endpoint_ = std::move(other.local_endpoint_);
     remote_endpoint_ = std::move(other.remote_endpoint_);
     return *this;
@@ -71,7 +72,7 @@ public:
   void open(protocol_type const& protocol = protocol_type()) {
     std::error_code ec;
     native_handle_ = cyan::net::detail::socket(protocol.family(), protocol.type(), protocol.protocol(), ec);
-    if (ec) throw ec;
+    if (ec) throw std::system_error{ ec };
   }
 
   bool is_open() const noexcept {
@@ -83,16 +84,16 @@ public:
 
     std::error_code ec;
     cyan::net::detail::close(native_handle_, ec);
-    if (ec) throw ec;
-    native_handle_ = invalid_socket;
+    if (ec) throw std::system_error{ ec };
+    native_handle_ = cyan::net::detail::invalid_socket;
     local_endpoint_ = endpoint_type{};
     remote_endpoint_ = endpoint_type{};
   }
 
-  void shutdown(shutdown_type how) {
+  void shutdown(socket_base::shutdown_type how) {
     std::error_code ec;
     cyan::net::detail::shutdown(native_handle_, static_cast<int>(how), ec);
-    if (ec) throw ec;
+    if (ec) throw std::system_error{ ec };
   }
 
   std::size_t available() const {
@@ -104,13 +105,13 @@ public:
 
     std::error_code ec;
     cyan::net::detail::bind(native_handle_, endpoint.data(), endpoint.size(), ec);
-    if (ec) throw ec;
+    if (ec) throw std::system_error{ ec };
   }
 
   void connect(endpoint_type const& peer) {
     std::error_code ec;
     cyan::net::detail::connect(native_handle_, peer.data(), peer.size(), ec);
-    if (ec) throw ec;
+    if (ec) throw std::system_error{ ec };
     remote_endpoint_ = peer;
   }
 
@@ -118,27 +119,27 @@ public:
   void set_option(Option const& option) {
     std::error_code ec;
     cyan::net::detail::set_socket_option(native_handle_, option, ec);
-    if (ec) throw ec;
+    if (ec) throw std::system_error{ ec };
   }
 
   template<typename Option>
   void get_option(Option& option) {
     std::error_code ec;
     cyan::net::detail::get_socket_option(native_handle_, option, ec);
-    if (ec) throw ec;
+    if (ec) throw std::system_error{ ec };
   }
 
   bool is_non_blocking() const {
     std::error_code ec;
     std::int32_t result = cyan::net::detail::socket_get_non_blocking(native_handle_, ec);
-    if (result < 0) throw ec;
+    if (result < 0) throw std::system_error{ ec };
     return result;
   }
 
   bool set_non_blocking(bool non_blocking) const {
     std::error_code ec;
     std::int32_t result = cyan::net::detail::socket_set_non_blocking(native_handle_, non_blocking, ec);
-    if (result < 0) throw ec;
+    if (result < 0) throw std::system_error{ ec };
     return result;
   }
 
@@ -147,7 +148,7 @@ public:
       std::uint32_t size = local_endpoint_.capacity();
       std::error_code ec;
       cyan::net::detail::get_sock_name(native_handle_, local_endpoint_.data(), &size, ec);
-      if (ec) throw ec;
+      if (ec) throw std::system_error{ ec };
     }
     return local_endpoint_;
   }
@@ -157,7 +158,7 @@ public:
       std::uint32_t size = remote_endpoint_.capacity();
       std::error_code ec;
       cyan::net::detail::get_peer_name(native_handle_, remote_endpoint_.data(), &size, ec);
-      if (ec) throw ec;
+      if (ec) throw std::system_error{ ec };
     }
     return remote_endpoint_;
   }

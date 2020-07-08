@@ -182,7 +182,7 @@ socket_type accept(socket_type sock, sockaddr_type* addr, std::uint32_t* len, st
   return new_sock;
 }
 
-std::int32_t shutdown(socket_type sock, std::error_code& ec) noexcept {
+std::int32_t close(socket_type sock, std::error_code& ec) noexcept {
   if (sock == invalid_socket) {
     ec = std::make_error_code(std::errc::bad_file_descriptor);
     return -1;
@@ -191,5 +191,26 @@ std::int32_t shutdown(socket_type sock, std::error_code& ec) noexcept {
   clear_last_error();
   return error_wrapper(::close(sock), ec);
 }
+
+std::int64_t receive(socket_type sock, void* buffer, std::size_t len, std::int32_t flags, std::error_code& ec) noexcept {
+  if (sock == invalid_socket) {
+    ec = std::make_error_code(std::errc::bad_file_descriptor);
+    return -1;
+  }
+
+  clear_last_error();
+  return error_wrapper(::recv(sock, buffer, len, flags), ec);
+}
+
+std::int64_t send(socket_type sock, void const* buffer, std::size_t len, std::int32_t flags, std::error_code& ec) noexcept {
+  if (sock == invalid_socket) {
+    ec = std::make_error_code(std::errc::bad_file_descriptor);
+    return -1;
+  }
+
+  clear_last_error();
+  return error_wrapper(::send(sock, buffer, len, flags), ec);
+}
+
 
 } // cyan::net::detail

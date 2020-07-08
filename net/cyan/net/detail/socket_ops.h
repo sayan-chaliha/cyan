@@ -28,10 +28,6 @@
 #include <cyan/net/detail/platform.h>
 #include <cyan/net/detail/address.h>
 
-#define CYAN_OS_DEF_SHUT_RD SHUT_RD
-#define CYAN_OS_DEF_SHUT_WR SHUT_WR
-#define CYAN_OS_DEF_SHUT_RDWR SHUT_RDWR
-
 namespace cyan::net::detail {
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -39,6 +35,7 @@ namespace cyan::net::detail {
 socket_type socket(std::int32_t af, std::int32_t type, std::int32_t protocol, std::error_code& ec) noexcept;
 socket_type socket_dup(socket_type sock, std::error_code& ec) noexcept;
 std::int32_t socket_set_non_blocking(socket_type sock, bool onoff, std::error_code& ec) noexcept;
+std::int32_t socket_get_non_blocking(socket_type sock, std::error_code& ec) noexcept;
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -48,6 +45,8 @@ std::int32_t connect(socket_type sock, sockaddr_type const* addr, std::uint32_t 
 socket_type accept(socket_type sock, sockaddr_type* addr, std::uint32_t* len, std::error_code& ec) noexcept;
 std::int32_t shutdown(socket_type sock, std::int32_t how, std::error_code& ec) noexcept;
 std::int32_t close(socket_type sock, std::error_code& ec) noexcept;
+std::int64_t receive(socket_type sock, void* buffer, std::size_t size, std::int32_t flags, std::error_code& ec) noexcept;
+std::int64_t send(socket_type sock, void const* buffer, std::size_t size, std::int32_t flags, std::error_code& ec) noexcept;
 
 // -------------------------------------------------------------------------------------------------------------------
 
