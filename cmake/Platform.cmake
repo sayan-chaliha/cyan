@@ -53,6 +53,9 @@ cyan_check_include_files("winsock2.h;windows.h" HAVE_WINSOCK2_H)
 cyan_check_include_files("winsock2.h;ws2tcpip.h;windows.h" HAVE_WS2TCPIP_H)
 cyan_check_include_files("winsock.h;windows.h" HAVE_WINSOCK_H)
 cyan_check_include_files(windows.h HAVE_WINDOWS_H)
+cyan_check_include_files(fcntl.h HAVE_FCNTL_H)
+cyan_check_include_files("arpa/inet.h" HAVE_ARPA_INET_H)
+cyan_check_include_files("netinet/tcp.h" HAVE_NETINET_TCP_H)
 
 check_function_exists(clock_gettime HAVE_CLOCK_GETTIME)
 check_function_exists(epoll_ctl HAVE_EPOLL_CTL)
@@ -77,6 +80,8 @@ check_struct_size("sockaddr_in" SOCKADDR_IN)
 check_struct_size("in_addr" IN_ADDR)
 check_struct_size("sockaddr_in6" SOCKADDR_IN6)
 check_struct_size("in6_addr" IN6_ADDR)
+check_struct_size("linger" LINGER)
+check_struct_size("timeval" TIMEVAL)
 
 # Symbols
 check_cxx_source_compiles(

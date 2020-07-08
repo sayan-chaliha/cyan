@@ -43,6 +43,7 @@ add_subdirectory(common)
 add_subdirectory(lockfree)
 add_subdirectory(event)
 add_subdirectory(dispatch)
+add_subdirectory(net)
 
 # Examples
 add_subdirectory(examples)
