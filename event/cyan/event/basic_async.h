@@ -41,40 +41,15 @@ public:
   using backend_traits_type = typename BackendTraits::async;
   using native_handle_type = typename backend_traits_type::native_handle_type;
 
-  basic_async(std::weak_ptr<loop_type> const& loop) : base{ loop },
-        native_handle_{ backend_traits_type::allocate(), backend_traits_type::deallocate } {
-    count_.store(0, std::memory_order_release);
-  }
+  basic_async(std::weak_ptr<loop_type> const& loop);
+  explicit basic_async(basic_async&& other) noexcept;
+  ~basic_async();
 
-  explicit basic_async(basic_async&& other) noexcept : base{ std::move(other) },
-        native_handle_{ std::move(other.native_handle_) } {
-  }
+  basic_async& operator =(basic_async&& other) noexcept;
 
-  ~basic_async() {
-    base::stop();
-  }
+  native_handle_type native_handle() const noexcept;
 
-  basic_async& operator =(basic_async&& other) noexcept {
-    base::operator =(std::move(other));
-    native_handle_ = std::move(other.native_handle_);
-    return *this;
-  }
-
-  native_handle_type native_handle() const noexcept {
-    return native_handle_.get();
-  }
-
-  void send() noexcept {
-    count_.fetch_add(1, std::memory_order_relaxed);
-
-    if (base::is_pending()) {
-      return;
-    }
-
-    if (auto loop = base::loop_ref_.lock()) {
-      backend_traits_type::send(loop->native_handle(), native_handle_.get());
-    }
-  }
+  void send() noexcept;
 
   template<typename F, typename... Args>
   void set_callback(F&& f, Args&&... args) {

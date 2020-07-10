@@ -24,52 +24,52 @@
 #pragma once
 
 #include <memory>
-#include <thread>
+#include <atomic>
 
-#include <cyan/noncopyable.h>
+#include <cyan/event/basic_async.txx>
 
 namespace cyan::event {
 inline namespace v1 {
 
-template<typename T>
-basic_loop<T>::basic_loop()
-      : native_handle_{ backend_traits_type::allocate(), backend_traits_type::deallocate },
-      owner_thread_{ std::this_thread::get_id() } {
+template<typename BackendTraits>
+basic_async<BackendTraits>::basic_async(std::weak_ptr<loop_type> const& loop) : base{ loop },
+      native_handle_{ backend_traits_type::allocate(), backend_traits_type::deallocate } {
+  count_.store(0, std::memory_order_release);
 }
 
-template<typename T>
-basic_loop<T>::~basic_loop() {
-  stop();
+template<typename BackendTraits>
+basic_async<BackendTraits>::basic_async(basic_async&& other) noexcept : base{ std::move(other) },
+      native_handle_{ std::move(other.native_handle_) } {
 }
 
-template<typename T>
-basic_loop<T>::basic_loop(basic_loop&& other) noexcept : native_handle_{ std::move(other.native_handle_) } {
+template<typename BackendTraits>
+basic_async<BackendTraits>:: ~basic_async() {
+  base::stop();
 }
 
-template<typename T>
-basic_loop<T>& basic_loop<T>::operator =(basic_loop&& other) noexcept {
+template<typename BackendTraits>
+basic_async<BackendTraits>& basic_async<BackendTraits>::operator =(basic_async&& other) noexcept {
+  base::operator =(std::move(other));
   native_handle_ = std::move(other.native_handle_);
   return *this;
 }
 
-template<typename T>
-typename basic_loop<T>::native_handle_type basic_loop<T>::native_handle() const noexcept {
+template<typename BackendTraits>
+typename basic_async<BackendTraits>::native_handle_type basic_async<BackendTraits>::native_handle() const noexcept {
   return native_handle_.get();
 }
 
-template<typename T>
-void basic_loop<T>::start() noexcept {
-  backend_traits_type::start(native_handle_.get());
-}
+template<typename BackendTraits>
+void basic_async<BackendTraits>::send() noexcept {
+  count_.fetch_add(1, std::memory_order_relaxed);
 
-template<typename T>
-void basic_loop<T>::stop() noexcept {
-  backend_traits_type::stop(native_handle_.get());
-}
+  if (base::is_pending()) {
+    return;
+  }
 
-template<typename T>
-std::thread::id basic_loop<T>::get_owner_thread_id() const noexcept {
-  return owner_thread_;
+  if (auto loop = base::loop_ref_.lock()) {
+    backend_traits_type::send(loop->native_handle(), native_handle_.get());
+  }
 }
 
 } // v1

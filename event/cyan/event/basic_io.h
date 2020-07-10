@@ -44,43 +44,18 @@ public:
   constexpr static event_flags event_write = backend_traits_type::event_write;
   constexpr static event_flags event_error = backend_traits_type::event_error;
 
-  basic_io(std::weak_ptr<loop_type> const& loop) : base{ loop },
-        native_handle_{ backend_traits_type::allocate(), backend_traits_type::deallocate } {
-  }
+  basic_io(std::weak_ptr<loop_type> const& loop);
+  explicit basic_io(basic_io&& other) noexcept;
+	~basic_io();
 
-  explicit basic_io(basic_io&& other) noexcept : base{ std::move(other) },
-        native_handle_{ std::move(other.native_handle_) } {
-  }
+  basic_io& operator =(basic_io&& other) noexcept;
 
-	~basic_io() {
-    base::stop();
-  }
+  native_handle_type native_handle() const;
 
-  basic_io& operator =(basic_io&& other) noexcept {
-    base::operator =(std::move(other));
-    native_handle_ = std::move(other.native_handle_);
-    return *this;
-  }
-
-  native_handle_type native_handle() const {
-    return native_handle_.get();
-  }
-
-  void set_event_flags(event_flags flags) noexcept {
-    backend_traits_type::set_event_flags(native_handle_.get(), flags);
-  }
-
-  event_flags get_event_flags() const noexcept {
-    return backend_traits_type::get_event_flags(native_handle_.get());
-  }
-
-  void set_file_descriptor(std::int32_t fd) noexcept {
-    backend_traits_type::set_file_descriptor(native_handle_.get(), fd);
-  }
-
-  std::int32_t get_file_descriptor() const noexcept {
-    return backend_traits_type::get_file_descriptor(native_handle_.get());
-  }
+  void set_event_flags(event_flags flags) noexcept;
+  event_flags get_event_flags() const noexcept;
+  void set_file_descriptor(std::int32_t fd) noexcept;
+  std::int32_t get_file_descriptor() const noexcept;
 
   template<typename F, typename ...Args>
   void set_callback(F&& f, Args&&... args) {
@@ -93,5 +68,5 @@ private:
       void (*)(native_handle_type)> native_handle_;
 };
 
-}
-}
+} // v1
+} // cyan::event

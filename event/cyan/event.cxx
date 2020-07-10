@@ -27,6 +27,8 @@
 
 #include <cyan/event.h>
 #include <cyan/event/basic_loop.txx>
+#include <cyan/event/basic_async.txx>
+#include <cyan/event/basic_io.txx>
 
 namespace {
 
@@ -49,6 +51,11 @@ std::shared_ptr<event::loop> get_main_loop() {
 }
 
 template class basic_loop<default_backend_traits>;
+template class basic_async<default_backend_traits>;
+template class basic_idle<default_backend_traits>;
+template class basic_timer<default_backend_traits>;
+template class basic_timer_wheel<default_backend_traits>;
+template class basic_io<default_backend_traits>;
 
 } // v1
 } // cyan::event

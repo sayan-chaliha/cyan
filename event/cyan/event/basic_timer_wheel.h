@@ -123,6 +123,7 @@ public:
 
   basic_timer_wheel& operator =(basic_timer_wheel&& other) noexcept {
     impl_ = std::move(other.impl_);
+    return *this;
   }
 
   void start() noexcept {

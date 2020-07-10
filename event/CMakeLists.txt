@@ -24,7 +24,7 @@ set(SOURCES_TEST
     test/event_tests.cxx
 )
 
-add_library(${LIB_NAME} STATIC ${SOURCES})
+add_library(${LIB_NAME} SHARED ${SOURCES})
 target_link_libraries(${LIB_NAME} PUBLIC ${PROJECT_NAME}_common)
 
 target_include_directories(${LIB_NAME} PUBLIC
