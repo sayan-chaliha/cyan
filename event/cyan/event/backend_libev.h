@@ -79,7 +79,7 @@ struct backend_traits<backend::libev> {
     static void deallocate(native_handle_type native_handle);
     
     template<typename F, typename ...Args>
-    static void set_callback(native_handle_type native_handle, F&& f, Args&&... args) noexcept {
+    static void set_callback(native_handle_type native_handle, F&& f, Args&&... args) {
       if (native_handle->data) delete static_cast<detail::state*>(native_handle->data);
       native_handle->data = detail::make_state(std::forward<F>(f), std::forward<Args>(args)...);
     }
@@ -116,7 +116,7 @@ struct backend_traits<backend::libev> {
     static std::chrono::milliseconds get_timeout(native_handle_type native_handle) noexcept;
 
     template<typename F, typename ...Args>
-    static void set_callback(native_handle_type native_handle, F&& f, Args&&... args) noexcept {
+    static void set_callback(native_handle_type native_handle, F&& f, Args&&... args) {
       if (native_handle->data) delete static_cast<detail::state*>(native_handle->data);
       native_handle->data = detail::make_state(std::forward<F>(f), std::forward<Args>(args)...);
     }
@@ -140,7 +140,7 @@ struct backend_traits<backend::libev> {
     static bool is_pending(native_handle_type) noexcept;
 
     template<typename F, typename ...Args>
-    static void set_callback(native_handle_type native_handle, F&& f, Args&&... args) noexcept {
+    static void set_callback(native_handle_type native_handle, F&& f, Args&&... args) {
       if (native_handle->data) delete static_cast<detail::state*>(native_handle->data);
       native_handle->data = detail::make_state(std::forward<F>(f), std::forward<Args>(args)...);
     }
@@ -161,7 +161,7 @@ struct backend_traits<backend::libev> {
     static bool is_pending(native_handle_type) noexcept;
 
     template<typename F, typename ...Args>
-    static void set_callback(native_handle_type native_handle, F&& f, Args&&... args) noexcept {
+    static void set_callback(native_handle_type native_handle, F&& f, Args&&... args) {
       if (native_handle->data) delete static_cast<detail::state*>(native_handle->data);
       native_handle->data = detail::make_state(std::forward<F>(f), std::forward<Args>(args)...);
     }
@@ -169,6 +169,58 @@ struct backend_traits<backend::libev> {
   private:
     static void idle_callback(typename loop::native_handle_type, native_handle_type native_handle, int) noexcept;
   };
+
+  struct io {
+  public:
+    using event_flags = std::int32_t;
+    constexpr static event_flags event_read = EV_READ;
+    constexpr static event_flags event_write = EV_WRITE;
+    constexpr static event_flags event_error = EV_ERROR;
+
+  private:
+    struct state {
+      virtual ~state() = default;
+      virtual void invoke_callback(event_flags) = 0;
+    };
+    
+    template<typename C>
+    struct state_impl : public state {
+      state_impl(C&& c) : callable_{ std::forward<C>(c) } {}
+      void invoke_callback(event_flags flags) override { callable_(flags); }
+    
+    private:
+      C callable_;
+    };
+		
+    template<typename F, typename ...Args>
+    static state* make_state(F&& f, Args&&... args) {
+      return new state_impl{ cyan::make_callable(std::forward<F>(f), std::forward<Args>(args)...) };
+    }
+
+	public:
+    using native_handle_type = struct ::ev_io*;
+
+    static native_handle_type allocate();
+    static void deallocate(native_handle_type native_handle);
+    static void start(typename loop::native_handle_type native_loop_handle, native_handle_type native_handle) noexcept;
+    static void stop(typename loop::native_handle_type native_loop_handle, native_handle_type native_handle) noexcept;
+    static bool is_active(native_handle_type native_handle) noexcept;
+    static bool is_pending(native_handle_type) noexcept;
+    static void set_file_descriptor(native_handle_type naitve_handle, std::int32_t fd) noexcept;
+    static std::int32_t get_file_descriptor(native_handle_type native_handle) noexcept;
+    static void set_event_flags(native_handle_type native_handle, event_flags ev) noexcept;
+    static event_flags get_event_flags(native_handle_type native_handle) noexcept;
+
+    template<typename F, typename ...Args>
+    static void set_callback(native_handle_type native_handle, F&& f, Args&&... args) {
+      if (native_handle->data) delete static_cast<state*>(native_handle->data);
+      native_handle->data = make_state(std::forward<F>(f), std::forward<Args>(args)...);
+    }
+
+  private:
+    static void io_callback(typename loop::native_handle_type, native_handle_type native_handle, int revents) noexcept;
+  };
+
 };
 
 } // cyan::event

@@ -23,34 +23,40 @@
  **/
 #pragma once
 
-#include <cyan/event/event_base.h>
+#include <cyan/noncopyable.h>
+#include <cyan/event/basic_loop.h>
 
 namespace cyan::event {
 inline namespace v1 {
 
 template<typename BackendTraits>
-class basic_idle : public cyan::event::event_base<BackendTraits, basic_idle> {
+class basic_io : public cyan::event::event_base<BackendTraits, basic_io> {
 private:
-  using base = cyan::event::event_base<BackendTraits, basic_idle>;
+  using base = cyan::event::event_base<BackendTraits, basic_io>;
 
 public:
-  using backend_traits_type = typename BackendTraits::idle;
+  using backend_traits_type = typename BackendTraits::io;
   using native_handle_type = typename backend_traits_type::native_handle_type;
   using loop_type = typename base::loop_type;
+  using event_flags = typename backend_traits_type::event_flags;
 
-  basic_idle(std::weak_ptr<loop_type> const& loop) : base{ loop },
+  constexpr static event_flags event_read = backend_traits_type::event_read;
+  constexpr static event_flags event_write = backend_traits_type::event_write;
+  constexpr static event_flags event_error = backend_traits_type::event_error;
+
+  basic_io(std::weak_ptr<loop_type> const& loop) : base{ loop },
         native_handle_{ backend_traits_type::allocate(), backend_traits_type::deallocate } {
   }
 
-  explicit basic_idle(basic_idle&& other) noexcept : base{ std::move(other) },
+  explicit basic_io(basic_io&& other) noexcept : base{ std::move(other) },
         native_handle_{ std::move(other.native_handle_) } {
   }
 
-	~basic_idle() {
+	~basic_io() {
     base::stop();
   }
 
-  basic_idle& operator =(basic_idle&& other) noexcept {
+  basic_io& operator =(basic_io&& other) noexcept {
     base::operator =(std::move(other));
     native_handle_ = std::move(other.native_handle_);
     return *this;
@@ -58,6 +64,22 @@ public:
 
   native_handle_type native_handle() const {
     return native_handle_.get();
+  }
+
+  void set_event_flags(event_flags flags) noexcept {
+    backend_traits_type::set_event_flags(native_handle_.get(), flags);
+  }
+
+  event_flags get_event_flags() const noexcept {
+    return backend_traits_type::get_event_flags(native_handle_.get());
+  }
+
+  void set_file_descriptor(std::int32_t fd) noexcept {
+    backend_traits_type::set_file_descriptor(native_handle_.get(), fd);
+  }
+
+  std::int32_t get_file_descriptor() const noexcept {
+    return backend_traits_type::get_file_descriptor(native_handle_.get());
   }
 
   template<typename F, typename ...Args>
@@ -68,8 +90,8 @@ public:
 
 private:
   std::unique_ptr<typename std::remove_pointer<native_handle_type>::type,
-        void (*)(native_handle_type)> native_handle_;
+      void (*)(native_handle_type)> native_handle_;
 };
 
-} // v1
-} // cyan::event
+}
+}

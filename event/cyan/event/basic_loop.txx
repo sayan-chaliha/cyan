@@ -28,32 +28,50 @@
 
 #include <cyan/noncopyable.h>
 
+
 namespace cyan::event {
 inline namespace v1 {
 
-template<typename BackendTraits>
-class basic_loop : public cyan::noncopyable {
-public:
-  using backend_traits_type = typename BackendTraits::loop;
-  using native_handle_type = typename backend_traits_type::native_handle_type;
+template<typename T>
+basic_loop<T>::basic_loop()
+      : native_handle_{ backend_traits_type::allocate(), backend_traits_type::deallocate },
+      owner_thread_{ std::this_thread::get_id() } {
+}
 
-  basic_loop();
-  explicit basic_loop(basic_loop&& other) noexcept;
-  ~basic_loop();
+template<typename T>
+basic_loop<T>::~basic_loop() {
+  stop();
+}
 
-  basic_loop& operator =(basic_loop&& other) noexcept;
+template<typename T>
+basic_loop<T>::basic_loop(basic_loop&& other) noexcept : native_handle_{ std::move(other.native_handle_) } {
+}
 
-  native_handle_type native_handle() const noexcept;
+template<typename T>
+basic_loop<T>& basic_loop<T>::operator =(basic_loop&& other) noexcept {
+  native_handle_ = std::move(other.native_handle_);
+  return *this;
+}
 
-  void start() noexcept;
-  void stop() noexcept;
-  std::thread::id get_owner_thread_id() const noexcept;
+template<typename T>
+typename basic_loop<T>::native_handle_type basic_loop<T>::native_handle() const noexcept {
+  return native_handle_.get();
+}
 
-private:
-  std::unique_ptr<typename std::remove_pointer<native_handle_type>::type,
-      void (*)(native_handle_type)> native_handle_;
-  std::thread::id owner_thread_;
-};
+template<typename T>
+void basic_loop<T>::start() noexcept {
+  backend_traits_type::start(native_handle_.get());
+}
+
+template<typename T>
+void basic_loop<T>::stop() noexcept {
+  backend_traits_type::stop(native_handle_.get());
+}
+
+template<typename T>
+std::thread::id basic_loop<T>::get_owner_thread_id() const noexcept {
+  return owner_thread_;
+}
 
 } // v1
 } // cyan::event

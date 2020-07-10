@@ -87,19 +87,19 @@ public:
     size_.fetch_add(1, std::memory_order_relaxed);
   }
 
-  void reserve(std::size_t size) {
+  void reserve(std::size_t size) noexcept {
     max_size_ = size;
   }
 
-  allocator_type get_allocator() const {
+  allocator_type get_allocator() const noexcept {
     return allocator_;
   }
 
-  std::size_t max_size() const {
+  std::size_t max_size() const noexcept {
     return max_size_;
   }
 
-  std::size_t size() const {
+  std::size_t size() const noexcept {
     return size_;
   }
 

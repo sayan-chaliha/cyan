@@ -23,7 +23,6 @@
  **/
 #pragma once
 
-#include <cyan/event/backend.h>
 #include <cyan/event/backend_libev.h>
 #include <cyan/event/basic_loop.h>
 #include <cyan/event/basic_async.h>
@@ -31,10 +30,10 @@
 #include <cyan/event/basic_timer_wheel.h>
 #include <cyan/event/basic_signal.h>
 #include <cyan/event/basic_idle.h>
+#include <cyan/event/basic_io.h>
 
-namespace cyan {
-
-namespace event {
+namespace cyan::event {
+inline namespace v1 {
 
 using default_backend_traits = backend_traits<backend::libev>;
 
@@ -44,15 +43,17 @@ using timer = basic_timer<default_backend_traits>;
 using timer_wheel = basic_timer_wheel<default_backend_traits>;
 using signal = basic_signal<default_backend_traits>;
 using idle = basic_idle<default_backend_traits>;
+using io = basic_io<default_backend_traits>;
 
-std::shared_ptr<event::loop> get_main_loop();
+std::shared_ptr<loop> get_main_loop();
 
-} //event
+} // v1
+} // cyan::event
 
-namespace this_thread {
+namespace cyan::this_thread {
+inline namespace v1 {
 
 std::shared_ptr<event::loop> get_event_loop();
 
-} // this_thread
-
-} // cyan
+}
+}

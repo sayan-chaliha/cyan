@@ -26,13 +26,15 @@
 #include <cyan/net/detail/platform.h>
 #include <cyan/net/ip/basic_endpoint.h>
 #include <cyan/net/ip/basic_stream_socket.h>
+#include <cyan/net/ip/basic_socket_acceptor.h>
 
 namespace cyan::net::ip {
 
 class tcp {
 public:
-  using endpoint_type = basic_endpoint<tcp>;
-  using socket_type = basic_stream_socket<tcp>;
+  using endpoint = basic_endpoint<tcp>;
+  using socket = basic_stream_socket<tcp>;
+  using acceptor = basic_socket_acceptor<tcp>;
 
   static tcp v4() noexcept {
     return tcp{ CYAN_OS_DEF(AF_INET) };

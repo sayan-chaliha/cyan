@@ -30,6 +30,8 @@ namespace cyan::net::ip::detail {
 class endpoint {
 public:
   endpoint() noexcept;
+  endpoint(endpoint const&) = default;
+  endpoint(endpoint&&) = default;
   endpoint(std::int32_t family, std::uint16_t port) noexcept;
   endpoint(cyan::net::ip::address const& addr, std::uint16_t port) noexcept;
 
@@ -45,6 +47,10 @@ public:
 
   bool is_v6() const noexcept {
     return addr_.base.sa_family == CYAN_OS_DEF(AF_INET6);
+  }
+
+  bool is_unspecified() const noexcept {
+    return get_address().is_unspecified();
   }
 
   cyan::net::ip::address get_address() const noexcept;

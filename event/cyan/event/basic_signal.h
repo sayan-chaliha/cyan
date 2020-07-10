@@ -23,77 +23,66 @@
  **/
 #pragma once
 
-#include <memory>
-
-#include <cyan/noncopyable.h>
-#include <cyan/event/basic_loop.h>
+#include <cyan/event/event_base.h>
 
 namespace cyan::event {
+inline namespace v1 {
 
-template<typename T>
-class basic_signal : public cyan::noncopyable {
+template<typename BackendTraits>
+class basic_signal : public cyan::event::event_base<BackendTraits, basic_signal> {
+private:
+  using base = cyan::event::event_base<BackendTraits, basic_signal>;
+
 public:
-  using backend_traits_type = T;
-  using native_handle_type = typename backend_traits_type::signal::native_handle_type;
+  using backend_traits_type = typename BackendTraits::signal;
+  using native_handle_type = typename backend_traits_type::native_handle_type;
+  using loop_type = typename base::loop_type;
 
-  basic_signal(std::weak_ptr<basic_loop<backend_traits_type>> const& loop_ref)
-        : loop_ref_{ loop_ref },
-        native_handle_{ backend_traits_type::signal::allocate(), backend_traits_type::signal::deallocate } {
+  basic_signal(std::weak_ptr<loop_type> const& loop) : base{ loop },
+        native_handle_{ backend_traits_type::allocate(), backend_traits_type::deallocate } {
   }
 
-  explicit basic_signal(basic_signal&& other) : loop_ref_{ std::move(other.loop_ref_) },
+  explicit basic_signal(basic_signal&& other) noexcept : base{ std::move(other) },
         native_handle_{ std::move(other.native_handle_) } {
-    other.loop_ref_ = nullptr;
-    other.native_handle_ = nullptr;
   }
 
 	~basic_signal() {
-		if (native_handle_) stop();
-	}
-
-  void start() {
-    if (auto loop = loop_ref_.lock()) {
-      backend_traits_type::signal::start(loop->native_handle(), native_handle_.get());
-    }
+    base::stop();
   }
 
-  void stop() {
-    if (auto loop = loop_ref_.lock()) {
-      backend_traits_type::signal::stop(loop->native_handle(), native_handle_.get());
-    }
+  basic_signal& operator =(basic_signal&& other) noexcept {
+    base::operator =(std::move(other));
+    native_handle_ = std::move(other.native_handle_);
+    return *this;
   }
 
-  std::int32_t get_number() const {
-    return backend_traits_type::signal::get_number(native_handle_.get());
+  native_handle_type native_handle() const {
+    return native_handle_.get();
   }
 
-  void set_number(std::int32_t signum) {
-    bool const was_active = is_active();
-    stop();
-    backend_traits_type::signal::set_number(native_handle_.get(), signum);
+  std::int32_t get_number() const noexcept {
+    return backend_traits_type::get_number(native_handle_.get());
+  }
+
+  void set_number(std::int32_t signum) noexcept {
+    bool const was_active = base::is_active();
+    base::stop();
+    backend_traits_type::set_number(native_handle_.get(), signum);
     if (was_active) {
-      start();
+      base::start();
     }
-  }
-
-  bool is_active() const {
-    return backend_traits_type::signal::is_active(native_handle_.get());
-  }
-
-  bool is_pending() const {
-    return backend_traits_type::signal::is_pending(native_handle_.get());
   }
 
   template<typename F, typename ...Args>
   void set_callback(F&& f, Args&&... args) {
-    backend_traits_type::signal::set_callback(native_handle_.get(), std::forward<F>(f),
+    backend_traits_type::set_callback(native_handle_.get(), std::forward<F>(f),
 				std::forward<Args>(args)...);
   }
 
 private:
-  std::weak_ptr<basic_loop<backend_traits_type>> loop_ref_;
   std::unique_ptr<typename std::remove_pointer<native_handle_type>::type,
-      void (*)(native_handle_type)> native_handle_;
+        void (*)(native_handle_type)> native_handle_;
 };
 
-}
+} // v1
+} // cyan::event

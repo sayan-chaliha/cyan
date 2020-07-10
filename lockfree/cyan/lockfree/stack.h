@@ -66,7 +66,7 @@ public:
     clear();
   }
 
-  allocator_type get_allocator() const {
+  allocator_type get_allocator() const noexcept {
     return pool_.get_allocator();
   }
 
@@ -110,7 +110,7 @@ public:
     return true;
   }
 
-  bool empty() const {
+  bool empty() const noexcept {
     return head_.load(std::memory_order_acquire) == nullptr;
   }
 

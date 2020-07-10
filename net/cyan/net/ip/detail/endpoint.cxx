@@ -26,9 +26,7 @@
 namespace cyan::net::ip::detail {
 
 endpoint::endpoint() noexcept {
-  addr_.v4.sin_family = CYAN_OS_DEF(AF_INET);
-  addr_.v4.sin_port = 0;
-  addr_.v4.sin_addr.s_addr = CYAN_OS_DEF(INADDR_ANY);
+  std::memset(&addr_.storage, 0, sizeof(addr_.storage));
 }
 
 endpoint::endpoint(cyan::net::ip::address const& addr, std::uint16_t port) noexcept {

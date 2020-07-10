@@ -266,6 +266,71 @@ backend_traits<backend::libev>::idle::idle_callback(typename loop::native_handle
   }
 }
 
+backend_traits<backend::libev>::io::native_handle_type
+backend_traits<backend::libev>::io::allocate() {
+  auto native_handle = new struct ::ev_io;
+  ev_io_init(native_handle, io_callback, -1, 0);
+  native_handle->data = nullptr;
+  return native_handle;
+}
+
+void
+backend_traits<backend::libev>::io::deallocate(native_handle_type native_handle) {
+  if (native_handle->data) delete static_cast<state*>(native_handle->data);
+  delete native_handle;
+}
+
+void
+backend_traits<backend::libev>::io::start(typename loop::native_handle_type native_loop_handle,
+      native_handle_type native_handle) noexcept {
+  ::ev_io_start(native_loop_handle, native_handle);
+}
+
+void
+backend_traits<backend::libev>::io::stop(typename loop::native_handle_type native_loop_handle,
+      native_handle_type native_handle) noexcept {
+  ::ev_io_stop(native_loop_handle, native_handle);
+}
+
+bool
+backend_traits<backend::libev>::io::is_active(native_handle_type native_handle) noexcept {
+  return ev_is_active(native_handle);
+}
+
+bool
+backend_traits<backend::libev>::io::is_pending(native_handle_type native_handle) noexcept {
+  return ev_is_pending(native_handle);
+}
+
+void
+backend_traits<backend::libev>::io::set_file_descriptor(native_handle_type native_handle, std::int32_t fd) noexcept {
+  ev_io_set(native_handle, fd, native_handle->events);
+}
+
+std::int32_t
+backend_traits<backend::libev>::io::get_file_descriptor(native_handle_type native_handle) noexcept {
+  return native_handle->fd;
+}
+
+void
+backend_traits<backend::libev>::io::set_event_flags(native_handle_type native_handle, event_flags ev) noexcept {
+  ev_io_modify(native_handle, ev);
+}
+
+backend_traits<backend::libev>::io::event_flags
+backend_traits<backend::libev>::io::get_event_flags(native_handle_type native_handle) noexcept {
+  return native_handle->events;
+}
+
+void
+backend_traits<backend::libev>::io::io_callback(typename loop::native_handle_type,
+      native_handle_type native_handle, int revents) noexcept {
+  if (native_handle->data) {
+    state* s = static_cast<state*>(native_handle->data);
+		s->invoke_callback(revents);
+  }
+}
+
 }
 
 #define EV_CONFIG_H <cyan/config.h>

@@ -40,6 +40,7 @@ using timeval_type = struct ::timeval;
 template<int Level, int Option>
 class boolean_socket_option {
 public:
+  boolean_socket_option() : value_{ false }, length_{ sizeof(std::int32_t) } {}
   boolean_socket_option(bool value) : value_{ value ? 1 : 0 }, length_{ sizeof(std::int32_t) } {}
   constexpr std::int32_t level() const { return Level; }
   constexpr std::int32_t option() const { return Option; }
@@ -58,6 +59,7 @@ private:
 template<int Level, int Option>
 class integer_socket_option {
 public:
+  integer_socket_option() : value_{ 0 }, length_{ sizeof(std::int32_t) }  {}
   integer_socket_option(std::int32_t value) : value_{ value }, length_{ sizeof(std::int32_t) }  {}
   constexpr std::int32_t level() const { return Level; }
   constexpr std::int32_t option() const { return Option; }
@@ -76,6 +78,12 @@ private:
 template<int Level, int Option>
 class linger_socket_option {
 public:
+  linger_socket_option() {
+    value_.l_onoff = false;
+    value_.l_linger = 0;
+    length_ = sizeof(linger_type);
+  }
+
   linger_socket_option(bool on, std::uint16_t time) {
     value_.l_onoff = on;
     value_.l_linger = time;
@@ -104,6 +112,12 @@ private:
 template<int Level, int Option>
 class time_socket_option {
 public:
+  time_socket_option() {
+    value_.tv_sec = 0;
+    value_.tv_usec = 0;
+    length_ = sizeof(timeval_type);
+  }
+
   time_socket_option(std::chrono::milliseconds const& time) {
     auto time_usec = time.count();
     value_.tv_sec = time_usec / 1000UL;

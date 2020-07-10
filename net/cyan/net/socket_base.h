@@ -24,13 +24,14 @@
  **/
 #pragma once
 
+#include <cyan/noncopyable.h>
 #include <cyan/net/detail/platform.h>
 #include <cyan/net/detail/socket_ops.h>
 #include <cyan/net/detail/socket_option.h>
 
 namespace cyan::net {
 
-class socket_base {
+class socket_base : public cyan::noncopyable {
 public:
   enum class shutdown_type {
     send = CYAN_OS_DEF(SHUT_WR),

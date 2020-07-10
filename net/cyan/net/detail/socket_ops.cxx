@@ -80,12 +80,12 @@ std::int32_t socket_set_non_blocking(socket_type sock, bool onoff, std::error_co
 
   clear_last_error();
 #ifdef WIN32
-  unsigned long mode = onoff ? 0 : 1;
+  unsigned long mode = onoff ? 1 : 0;
   return error_wrapper(::ioctlsocket(sock, FIONBIO, &mode), ec);
 #else
   std::int32_t flags = error_wrapper(::fcntl(sock, F_GETFL, 0), ec);
   if (flags == -1) return flags;
-  flags = onoff ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK);
+  flags = onoff ? (flags | O_NONBLOCK) : (flags & ~O_NONBLOCK);
   return error_wrapper(::fcntl(sock, F_SETFL, flags), ec);
 #endif // WIN32
 }

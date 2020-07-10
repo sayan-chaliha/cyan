@@ -10,6 +10,7 @@ set(HEADERS
     cyan/event/basic_timer.h
     cyan/event/basic_signal.h
     cyan/event/basic_idle.h
+    cyan/event/basic_io.h
     cyan/event/backend.h
     cyan/event/backend_libev.h
     cyan/external/ev/ev.h

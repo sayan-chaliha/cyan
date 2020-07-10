@@ -25,11 +25,11 @@
 
 namespace cyan::version {
 
-std::int_least8_t major();
-std::int_least8_t minor();
-std::int_least8_t patch();
-std::int_least8_t tweak();
-char const* str();
-wchar_t const* wstr();
+constexpr std::int_least8_t major() noexcept;
+constexpr std::int_least8_t minor() noexcept;
+constexpr std::int_least8_t patch() noexcept;
+constexpr std::int_least8_t tweak() noexcept;
+constexpr char const* str() noexcept;
+constexpr wchar_t const* wstr() noexcept;
 
 }

@@ -25,39 +25,50 @@
 #pragma once
 
 #include <cyan/noncopyable.h>
+#include <cyan/event.h>
 #include <cyan/net/socket_base.h>
 
 namespace cyan::net {
 
 template<typename Protocol>
-class basic_socket : cyan::noncopyable {
+class basic_socket : public socket_base, protected cyan::event::io {
+private:
+  using base_io = cyan::event::io;
+  using event_loop_type = std::weak_ptr<cyan::event::loop> const&;
+
 public:
   using protocol_type = Protocol;
   using native_handle_type = cyan::net::detail::socket_type;
-  using endpoint_type = typename protocol_type::endpoint_type;
+  using endpoint_type = typename protocol_type::endpoint;
 
-  basic_socket() noexcept : native_handle_{ cyan::net::detail::invalid_socket } {
+  basic_socket(event_loop_type loop_ref) : base_io{ loop_ref },
+        native_handle_{ cyan::net::detail::invalid_socket } {
   }
 
-  basic_socket(native_handle_type native_handle) noexcept : native_handle_{ native_handle } {
+  basic_socket(event_loop_type loop_ref, native_handle_type native_handle) noexcept
+        : base_io{ loop_ref }, native_handle_{ native_handle } {
+    base_io::set_file_descriptor(native_handle_);
   }
 
-  basic_socket(protocol_type const& protocol) : native_handle_{ cyan::net::detail::invalid_socket } {
+  basic_socket(event_loop_type loop_ref, protocol_type const& protocol) : base_io{ loop_ref },
+        native_handle_{ cyan::net::detail::invalid_socket } {
     open(protocol);
   }
 
-  basic_socket(endpoint_type const& endpoint) {
-    open(endpoint.protocol());
+  basic_socket(event_loop_type loop_ref, endpoint_type const& endpoint) : base_io{ loop_ref },
+        native_handle_{ cyan::net::detail::invalid_socket } {
     bind(endpoint);
   }
 
-  basic_socket(basic_socket&& other) noexcept : native_handle_{ other.native_handle_ },
+  basic_socket(basic_socket&& other) noexcept : base_io{ std::move(other) },
+        native_handle_{ other.native_handle_ },
         local_endpoint_{ std::move(other.local_endpoint_) },
         remote_endpoint_{ std::move(other.remote_endpoint_) } {
     other.native_handle_ = cyan::net::detail::invalid_socket;
   }
 
   basic_socket& operator =(basic_socket&& other) noexcept {
+    base_io::operator =(std::move(other));
     native_handle_ = other.native_handle_;
     other.native_handle_ = cyan::net::detail::invalid_socket;
     local_endpoint_ = std::move(other.local_endpoint_);
@@ -71,8 +82,11 @@ public:
 
   void open(protocol_type const& protocol = protocol_type()) {
     std::error_code ec;
+
     native_handle_ = cyan::net::detail::socket(protocol.family(), protocol.type(), protocol.protocol(), ec);
     if (ec) throw std::system_error{ ec };
+
+    base_io::set_file_descriptor(native_handle_);
   }
 
   bool is_open() const noexcept {
@@ -83,11 +97,15 @@ public:
     if (!is_open()) return;
 
     std::error_code ec;
+
+    base_io::stop();
     cyan::net::detail::close(native_handle_, ec);
     if (ec) throw std::system_error{ ec };
+
     native_handle_ = cyan::net::detail::invalid_socket;
     local_endpoint_ = endpoint_type{};
     remote_endpoint_ = endpoint_type{};
+    base_io::set_file_descriptor(native_handle_);
   }
 
   void shutdown(socket_base::shutdown_type how) {
@@ -100,8 +118,10 @@ public:
     return 0;
   }
 
-  void bind(endpoint_type const& endpoint) {
+  void bind(endpoint_type const& endpoint, bool reuse_addr = true) {
     if (!is_open()) open(endpoint.protocol());
+
+    set_option(socket_base::reuse_address{ reuse_addr });
 
     std::error_code ec;
     cyan::net::detail::bind(native_handle_, endpoint.data(), endpoint.size(), ec);
@@ -163,14 +183,22 @@ public:
     return remote_endpoint_;
   }
 
+  void start() noexcept {
+    base_io::start();
+  }
+
+  void stop() noexcept {
+    base_io::stop();
+  }
+
 protected:
   ~basic_socket() {
     close();
   }
 
   native_handle_type native_handle_;
-  endpoint_type local_endpoint_;
-  endpoint_type remote_endpoint_;
+  mutable endpoint_type local_endpoint_;
+  mutable endpoint_type remote_endpoint_;
 };
 
 } // cyan::net

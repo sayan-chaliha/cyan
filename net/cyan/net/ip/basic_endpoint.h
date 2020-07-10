@@ -67,6 +67,10 @@ public:
     impl_.set_port(port);
   }
 
+  bool is_unspecified() const noexcept {
+    return impl_.is_unspecified();
+  }
+
   cyan::net::ip::address get_address() const noexcept {
     return impl_.get_address();
   }

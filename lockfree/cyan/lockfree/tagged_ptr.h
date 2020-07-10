@@ -38,58 +38,58 @@ public:
   using const_pointer_type = T const*;
   using const_reference_type = T const&;
 
-  tagged_ptr() : ptr_{ nullptr }, tag_{ 0 } {}
-  explicit tagged_ptr(pointer_type ptr, tag_type tag = 0) : ptr_{ ptr }, tag_{ tag } {}
-  tagged_ptr(tagged_ptr const&) = default;
-  tagged_ptr(tagged_ptr&&) = default;
+  tagged_ptr() noexcept : ptr_{ nullptr }, tag_{ 0 } {}
+  explicit tagged_ptr(pointer_type ptr, tag_type tag = 0) noexcept : ptr_{ ptr }, tag_{ tag } {}
+  tagged_ptr(tagged_ptr const&) noexcept = default;
+  tagged_ptr(tagged_ptr&&) noexcept = default;
 
-  tagged_ptr& operator =(tagged_ptr const&) = default;
+  tagged_ptr& operator =(tagged_ptr const&) noexcept = default;
 
-  bool operator ==(tagged_ptr const& other) const {
+  bool operator ==(tagged_ptr const& other) const noexcept {
     return ptr_ == other.ptr_ && tag_ == other.tag_;
   }
 
-  bool operator !=(tagged_ptr const& other) const {
+  bool operator !=(tagged_ptr const& other) const noexcept {
     return !operator ==(other);
   }
 
-  tag_type get_tag() const {
+  tag_type get_tag() const noexcept {
     return tag_;
   }
 
-  void set_tag(tag_type t) {
+  void set_tag(tag_type t) noexcept {
     tag_ = t;
   }
 
-  pointer_type get_ptr() const {
+  pointer_type get_ptr() const noexcept {
     return ptr_;
   }
 
-  void set_ptr(pointer_type ptr) {
+  void set_ptr(pointer_type ptr) noexcept {
     ptr_ = ptr;
   }
 
-  tag_type get_next_tag() const {
+  tag_type get_next_tag() const noexcept {
     return (tag_ + 1) & std::numeric_limits<tag_type>::max();
   }
 
-  const_pointer_type operator ->() const {
+  const_pointer_type operator ->() const noexcept {
     return ptr_;
   }
 
-  pointer_type operator ->() {
+  pointer_type operator ->() noexcept {
     return ptr_;
   }
 
-  const_reference_type operator *() const {
+  const_reference_type operator *() const noexcept {
     return *ptr_;
   }
 
-  reference_type operator *() {
+  reference_type operator *() noexcept {
     return *ptr_;
   }
 
-  operator bool() const {
+  operator bool() const noexcept {
     return ptr_ != nullptr;
   }
 

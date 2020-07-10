@@ -29,24 +29,28 @@
 namespace cyan::net::ip {
 
 template<typename Protocol>
+class basic_socket_acceptor;
+
+template<typename Protocol>
 class basic_stream_socket : public cyan::net::basic_socket<Protocol> {
 private:
   using base = cyan::net::basic_socket<Protocol>;
+  using event_loop_type = std::weak_ptr<cyan::event::loop> const&;
 
 public:
   using protocol_type = typename base::protocol_type;
   using native_handle_type = typename base::native_handle_type;
-  using endpoint_type = typename protocol_type::endpoint_type;
+  using endpoint_type = typename protocol_type::endpoint;
 
-  basic_stream_socket() noexcept = default;
+  basic_stream_socket(event_loop_type loop_ref) : base{ loop_ref } {}
 
-  basic_stream_socket(native_handle_type native_handle) noexcept : base{ native_handle } {
+  basic_stream_socket(event_loop_type loop_ref, native_handle_type native_handle) : base{ loop_ref, native_handle } {
   }
 
-  basic_stream_socket(protocol_type const& protocol) : base{ protocol } {
+  basic_stream_socket(event_loop_type loop_ref, protocol_type const& protocol) : base{ loop_ref, protocol } {
   }
 
-  basic_stream_socket(endpoint_type const& endpoint) : base{ endpoint } {
+  basic_stream_socket(event_loop_type loop_ref, endpoint_type const& endpoint) : base{ loop_ref, endpoint } {
   }
 
   basic_stream_socket(basic_stream_socket&&) = default;
@@ -55,7 +59,7 @@ public:
   ~basic_stream_socket() = default;
 
   template<typename MutableBuffer>
-  std::size_t receive(MutableBuffer& buffer, socket_base::message_flags flags = 0) {
+  std::size_t receive(MutableBuffer&& buffer, socket_base::message_flags flags = 0) {
     std::error_code ec;
     std::int64_t read = cyan::net::detail::receive(base::native_handle_, buffer.data(), buffer.size(), flags, ec);
     if (read < 0 && ec) throw std::system_error{ ec };
@@ -63,14 +67,15 @@ public:
   }
 
   template<typename MutableBuffer>
-  std::size_t send(MutableBuffer& buffer, socket_base::message_flags flags = 0) {
+  std::size_t send(MutableBuffer&& buffer, socket_base::message_flags flags = 0) {
     std::error_code ec;
-    std::int64_t read = cyan::net::detail::receive(base::native_handle_, buffer.data(), buffer.size(), flags, ec);
-    if (read < 0 && ec) throw std::system_error{ ec };
-    return read;
+    std::int64_t sent = cyan::net::detail::send(base::native_handle_, buffer.data(), buffer.size(), flags, ec);
+    if (sent < 0 && ec) throw std::system_error{ ec };
+    return sent;
   }
 
 protected:
+  friend class basic_socket_acceptor<Protocol>;
 };
 
 } // cyan::net

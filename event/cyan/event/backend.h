@@ -38,6 +38,8 @@ struct native_handle_types {
   using signal_callback_type = void (*)(std::int32_t);
   using idle_handle_type = void*;
   using idle_callback_type = void (*)();
+  using io_handle_type = void*;
+  using io_callback_type = void (*)(std::int32_t);
 };
 
 template<typename T>
@@ -181,6 +183,46 @@ struct backend_traits {
     }
 
     static void stop(typename loop::native_handle_type, native_handle_type) noexcept {
+    }
+
+    static void set_callback(native_handle_type, callback_type const&) noexcept {
+    }
+
+    static bool is_active(native_handle_type) noexcept {
+      return false;
+    }
+
+    static bool is_pending(native_handle_type) noexcept {
+      return false;
+    }
+  };
+
+  struct io {
+    using native_handle_type = typename T::io_handle_type;
+    using callback_type = typename T::io_callback_type;
+    using event_flags = std::int32_t;
+    constexpr static event_flags event_read = 0;
+    constexpr static event_flags event_write = 0;
+    constexpr static event_flags event_error = 0;
+
+    static native_handle_type allocate() {
+      return native_handle_type();
+    }
+
+    static void deallocate(native_handle_type) {
+    }
+
+    static void start(typename loop::native_handle_type, native_handle_type) noexcept {
+    }
+
+    static void stop(typename loop::native_handle_type, native_handle_type) noexcept {
+    }
+
+    static void set_file_descriptor(std::int32_t) noexcept {
+    }
+
+    static std::int32_t get_file_descriptor() noexcept {
+      return -1;
     }
 
     static void set_callback(native_handle_type, callback_type const&) noexcept {

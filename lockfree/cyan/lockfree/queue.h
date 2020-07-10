@@ -84,7 +84,7 @@ public:
     pool_.deallocate(tail.get_ptr());
   }
 
-  allocator_type get_allocator() const {
+  allocator_type get_allocator() const noexcept {
     return allocator_type(pool_.get_allocator());
   }
 
@@ -134,15 +134,15 @@ public:
     }
   }
 
-  bool empty() const {
+  bool empty() const noexcept {
     return tail_.load(std::memory_order_acquire).get_ptr() == head_.load(std::memory_order_acquire).get_ptr();
   }
 
-  bool is_lock_free() const {
+  bool is_lock_free() const noexcept {
     return tail_.is_lock_free() && head_.is_lock_free();
   }
 
-  void reserve(std::size_t size) {
+  void reserve(std::size_t size) noexcept {
     pool_.reserve(size);
   }
 
