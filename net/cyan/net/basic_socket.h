@@ -70,6 +70,7 @@ public:
   basic_socket& operator =(basic_socket&& other) noexcept {
     base_io::operator =(std::move(other));
     native_handle_ = other.native_handle_;
+    other.set_callback(nullptr);
     other.native_handle_ = cyan::net::detail::invalid_socket;
     local_endpoint_ = std::move(other.local_endpoint_);
     remote_endpoint_ = std::move(other.remote_endpoint_);
@@ -192,7 +193,7 @@ public:
   }
 
 protected:
-  ~basic_socket() {
+  virtual ~basic_socket() {
     close();
   }
 

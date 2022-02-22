@@ -59,7 +59,7 @@ int main(int, char**) {
   // simultaneously.
   cyan::event::signal signal{ cyan::this_thread::get_event_loop() };
   signal.set_number(SIGINT);
-  signal.set_callback([] {
+  signal.set_callback([] () {
     std::cout << "signal SIGINT received. Shutting down loop." << std::endl;
 
     // Every thread gets its own event loop. This

@@ -81,7 +81,7 @@ struct backend_traits {
     static void send(typename loop::native_handle_type, native_handle_type) noexcept {
     }
 
-    static void set_callback(native_handle_type, callback_type const&) noexcept {
+    static void set_callback(native_handle_type, callback_type const&&) noexcept {
     }
 
     static bool is_active(native_handle_type) noexcept {
@@ -120,7 +120,7 @@ struct backend_traits {
     static std::chrono::milliseconds get_timeout(native_handle_type) noexcept {
     }
 
-    static void set_callback(native_handle_type, callback_type const&) noexcept {
+    static void set_callback(native_handle_type, callback_type const&&) noexcept {
     }
 
     static bool is_active(native_handle_type) noexcept {
@@ -156,7 +156,7 @@ struct backend_traits {
       return -1;
     }
 
-    static void set_callback(native_handle_type, callback_type const&) noexcept {
+    static void set_callback(native_handle_type, callback_type const&&) noexcept {
     }
 
     static bool is_active(native_handle_type) noexcept {
@@ -185,7 +185,7 @@ struct backend_traits {
     static void stop(typename loop::native_handle_type, native_handle_type) noexcept {
     }
 
-    static void set_callback(native_handle_type, callback_type const&) noexcept {
+    static void set_callback(native_handle_type, callback_type const&&) noexcept {
     }
 
     static bool is_active(native_handle_type) noexcept {
@@ -225,7 +225,7 @@ struct backend_traits {
       return -1;
     }
 
-    static void set_callback(native_handle_type, callback_type const&) noexcept {
+    static void set_callback(native_handle_type, callback_type const&&) noexcept {
     }
 
     static bool is_active(native_handle_type) noexcept {

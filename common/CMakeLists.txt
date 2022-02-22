@@ -6,7 +6,6 @@ set(HEADERS
     cyan/cyan.h
     cyan/utility.h
     cyan/noncopyable.h
-    cyan/callable.h
 )
 set(SOURCES
     ${HEADERS}

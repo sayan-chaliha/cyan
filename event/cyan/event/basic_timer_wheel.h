@@ -115,6 +115,8 @@ public:
   }
 
   explicit basic_timer_wheel(basic_timer_wheel&& other) noexcept : impl_{ std::move(other.impl_) } {
+    impl_->timer.set_callback([this] { bookkeeper(); });
+    other.impl_ = nullptr;
   }
 
   ~basic_timer_wheel() {
@@ -123,6 +125,8 @@ public:
 
   basic_timer_wheel& operator =(basic_timer_wheel&& other) noexcept {
     impl_ = std::move(other.impl_);
+    impl_->timer.set_callback([this] { bookkeeper(); });
+    other.impl_ = nullptr;
     return *this;
   }
 

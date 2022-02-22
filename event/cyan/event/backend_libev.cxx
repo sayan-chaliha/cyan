@@ -61,7 +61,7 @@ backend_traits<backend::libev>::async::allocate() {
   
 void
 backend_traits<backend::libev>::async::deallocate(native_handle_type native_handle) {
-  if (native_handle->data) delete static_cast<detail::state*>(native_handle->data);
+  if (native_handle->data) delete static_cast<callback_type*>(native_handle->data);
   delete native_handle;
 }
   
@@ -94,11 +94,22 @@ backend_traits<backend::libev>::async::is_pending(native_handle_type native_hand
 }
 
 void
+backend_traits<backend::libev>::async::set_callback(native_handle_type native_handle,
+      callback_type && callback) noexcept {
+  if (native_handle->data) delete static_cast<callback_type*>(native_handle->data);
+  native_handle->data = nullptr;
+
+  if (callback) {
+    native_handle->data = new callback_type(std::forward<callback_type>(callback));
+  }
+}
+
+void
 backend_traits<backend::libev>::async::async_callback(typename loop::native_handle_type,
       native_handle_type async, int) noexcept {
   if (async->data) {
-    detail::state* s = static_cast<detail::state*>(async->data);
-    s->invoke_callback();
+    auto* callback = static_cast<callback_type*>(async->data);
+    (*callback)();
   }
 }
 
@@ -112,7 +123,7 @@ backend_traits<backend::libev>::timer::allocate() {
 
 void
 backend_traits<backend::libev>::timer::deallocate(native_handle_type native_handle) {
-  if (native_handle->data) delete static_cast<detail::state*>(native_handle->data);
+  if (native_handle->data) delete static_cast<callback_type*>(native_handle->data);
   delete native_handle;
 }
 
@@ -156,11 +167,22 @@ backend_traits<backend::libev>::timer::set_timeout(native_handle_type native_han
 }
 
 void
+backend_traits<backend::libev>::timer::set_callback(native_handle_type native_handle,
+      callback_type && callback) noexcept {
+  if (native_handle->data) delete static_cast<callback_type*>(native_handle->data);
+  native_handle->data = nullptr;
+
+  if (callback) {
+    native_handle->data = new callback_type(std::forward<callback_type>(callback));
+  }
+}
+
+void
 backend_traits<backend::libev>::timer::timer_callback(typename loop::native_handle_type,
       native_handle_type timer, int) noexcept {
   if (timer->data) {
-    detail::state* s = static_cast<detail::state*>(timer->data);
-		s->invoke_callback();
+    auto callback = static_cast<callback_type*>(timer->data);
+    (*callback)();
   }
 }
 
@@ -175,7 +197,7 @@ backend_traits<backend::libev>::signal::allocate() {
 
 void
 backend_traits<backend::libev>::signal::deallocate(native_handle_type native_handle) {
-  if (native_handle->data) delete static_cast<detail::state*>(native_handle->data);
+  if (native_handle->data) delete static_cast<callback_type*>(native_handle->data);
   delete native_handle;
 }
 
@@ -213,11 +235,22 @@ backend_traits<backend::libev>::signal::is_pending(native_handle_type native_han
 }
 
 void
+backend_traits<backend::libev>::signal::set_callback(native_handle_type native_handle,
+      callback_type && callback) noexcept {
+  if (native_handle->data) delete static_cast<callback_type*>(native_handle->data);
+  native_handle->data = nullptr;
+
+  if (callback) {
+    native_handle->data = new callback_type(std::forward<callback_type>(callback));
+  }
+}
+
+void
 backend_traits<backend::libev>::signal::signal_callback(typename loop::native_handle_type,
       native_handle_type native_handle, int) noexcept {
   if (native_handle->data) {
-    detail::state* s = static_cast<detail::state*>(native_handle->data);
-    s->invoke_callback();
+    auto callback = static_cast<callback_type*>(native_handle->data);
+    (*callback)();
   }
 }
 
@@ -231,7 +264,7 @@ backend_traits<backend::libev>::idle::allocate() {
 
 void
 backend_traits<backend::libev>::idle::deallocate(native_handle_type native_handle) {
-  if (native_handle->data) delete static_cast<detail::state*>(native_handle->data);
+  if (native_handle->data) delete static_cast<callback_type*>(native_handle->data);
   delete native_handle;
 }
 
@@ -258,11 +291,22 @@ backend_traits<backend::libev>::idle::is_pending(native_handle_type native_handl
 }
 
 void
+backend_traits<backend::libev>::idle::set_callback(native_handle_type native_handle,
+      callback_type && callback) noexcept {
+  if (native_handle->data) delete static_cast<callback_type*>(native_handle->data);
+  native_handle->data = nullptr;
+
+  if (callback) {
+    native_handle->data = new callback_type(std::forward<callback_type>(callback));
+  }
+}
+
+void
 backend_traits<backend::libev>::idle::idle_callback(typename loop::native_handle_type,
       native_handle_type native_handle, int) noexcept {
   if (native_handle->data) {
-    detail::state* s = static_cast<detail::state*>(native_handle->data);
-		s->invoke_callback();
+    auto callback = static_cast<callback_type*>(native_handle->data);
+    (*callback)();
   }
 }
 
@@ -276,7 +320,7 @@ backend_traits<backend::libev>::io::allocate() {
 
 void
 backend_traits<backend::libev>::io::deallocate(native_handle_type native_handle) {
-  if (native_handle->data) delete static_cast<state*>(native_handle->data);
+  if (native_handle->data) delete static_cast<callback_type*>(native_handle->data);
   delete native_handle;
 }
 
@@ -323,11 +367,21 @@ backend_traits<backend::libev>::io::get_event_flags(native_handle_type native_ha
 }
 
 void
+backend_traits<backend::libev>::io::set_callback(native_handle_type native_handle,
+      callback_type && callback) noexcept {
+  if (native_handle->data) delete static_cast<callback_type*>(native_handle->data);
+  native_handle->data = nullptr;
+  if (callback) {
+    native_handle->data = new callback_type(std::forward<callback_type>(callback));
+  }
+}
+
+void
 backend_traits<backend::libev>::io::io_callback(typename loop::native_handle_type,
       native_handle_type native_handle, int revents) noexcept {
   if (native_handle->data) {
-    state* s = static_cast<state*>(native_handle->data);
-		s->invoke_callback(revents);
+    auto callback = static_cast<callback_type*>(native_handle->data);
+    (*callback)(revents);
   }
 }
 

@@ -37,6 +37,7 @@ public:
   using backend_traits_type = typename BackendTraits::signal;
   using native_handle_type = typename backend_traits_type::native_handle_type;
   using loop_type = typename base::loop_type;
+  using callback_type = typename backend_traits_type::callback_type;
 
   basic_signal(std::weak_ptr<loop_type> const& loop) : base{ loop },
         native_handle_{ backend_traits_type::allocate(), backend_traits_type::deallocate } {
@@ -44,6 +45,7 @@ public:
 
   explicit basic_signal(basic_signal&& other) noexcept : base{ std::move(other) },
         native_handle_{ std::move(other.native_handle_) } {
+    other.native_handle_ = nullptr;
   }
 
 	~basic_signal() {
@@ -53,6 +55,7 @@ public:
   basic_signal& operator =(basic_signal&& other) noexcept {
     base::operator =(std::move(other));
     native_handle_ = std::move(other.native_handle_);
+    other.native_handle_ = nullptr;
     return *this;
   }
 
@@ -73,10 +76,8 @@ public:
     }
   }
 
-  template<typename F, typename ...Args>
-  void set_callback(F&& f, Args&&... args) {
-    backend_traits_type::set_callback(native_handle_.get(), std::forward<F>(f),
-				std::forward<Args>(args)...);
+  void set_callback(callback_type&& callback) {
+    backend_traits_type::set_callback(native_handle_.get(), std::forward<callback_type>(callback));
   }
 
 private:

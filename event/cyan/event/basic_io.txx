@@ -76,5 +76,11 @@ std::int32_t basic_io<BackendTraits>::get_file_descriptor() const noexcept {
   return backend_traits_type::get_file_descriptor(native_handle_.get());
 }
 
+template<typename BackendTraits>
+void basic_io<BackendTraits>::set_callback(callback_type&& callback) noexcept {
+  return backend_traits_type::set_callback(native_handle_.get(), std::forward<callback_type>(callback));
+}
+
+
 } // v1
 } // cyan::event

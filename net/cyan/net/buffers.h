@@ -34,8 +34,8 @@ public:
   }
 
   template<typename Container>
-  mutable_buffer(Container& container) noexcept : data_{ container.data() },
-        size_{ container.capacity() * sizeof(typename Container::value_type) } {
+  mutable_buffer(Container& container) noexcept : data_{ reinterpret_cast<void*>(container.data()) },
+        size_{ container.size() * sizeof(typename Container::value_type) } {
   }
 
   void* data() noexcept {
@@ -59,9 +59,13 @@ public:
   const_buffer(void const* data, std::size_t size) noexcept : data_{ data }, size_{ size } {
   }
 
+  const_buffer(mutable_buffer const& buffer) noexcept : data_{ const_cast<mutable_buffer&>(buffer).data() },
+      size_{ buffer.size() } {
+  }
+
   template<typename Container>
   const_buffer(Container& container) noexcept : data_{ container.data() },
-        size_{ container.capacity() * sizeof(typename Container::value_type) } {
+        size_{ container.size() * sizeof(typename Container::value_type) } {
   }
 
   void const* data() const noexcept {

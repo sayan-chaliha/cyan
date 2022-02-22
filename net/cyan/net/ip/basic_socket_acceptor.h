@@ -25,7 +25,6 @@
 #pragma once
 
 #include <cyan/event.h>
-#include <cyan/callable.h>
 #include <cyan/net/socket_base.h>
 #include <cyan/net/ip/basic_stream_socket.h>
 
@@ -73,11 +72,13 @@ public:
 
   basic_socket_acceptor(basic_socket_acceptor&& other) noexcept : native_handle_{ other.native_handle_ },
         local_endpoint_{ std::move(other.local_endpoint_) } {
+    base_io::set_callback([this] (cyan::event::io::event_flags events) { event_callback(events); });
     other.native_handle_ = cyan::net::detail::invalid_socket;
   }
 
   basic_socket_acceptor& operator =(basic_socket_acceptor&& other) noexcept {
     native_handle_ = other.native_handle_;
+    base_io::set_callback([this] (cyan::event::io::event_flags events) { event_callback(events); });
     other.native_handle_ = cyan::net::detail::invalid_socket;
     local_endpoint_ = std::move(other.local_endpoint_);
     return *this;
@@ -190,7 +191,7 @@ public:
   }
 
   void set_connection_callback(connection_callback_type&& callback) {
-    connection_callback_ = std::forward<connection_callback_type>(callback);
+    connection_callback_ = std::move(callback);
   }
 
 protected:
@@ -210,7 +211,7 @@ protected:
       }
 
       if (connection_callback_) {
-        connection_callback_(std::make_unique<basic_stream_socket<Protocol>>(std::move(socket)));
+        connection_callback_(std::move(std::make_unique<basic_stream_socket<Protocol>>(std::move(socket))));
       }
     }
   }

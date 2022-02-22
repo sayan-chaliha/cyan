@@ -40,6 +40,7 @@ private:
 public:
   using backend_traits_type = typename BackendTraits::async;
   using native_handle_type = typename backend_traits_type::native_handle_type;
+  using callback_type = typename backend_traits_type::callback_type;
 
   basic_async(std::weak_ptr<loop_type> const& loop);
   explicit basic_async(basic_async&& other) noexcept;
@@ -51,19 +52,7 @@ public:
 
   void send() noexcept;
 
-  template<typename F, typename... Args>
-  void set_callback(F&& f, Args&&... args) {
-    backend_traits_type::set_callback(native_handle_.get(),
-          [this, f = std::forward<F>(f), ...args = std::forward<Args>(args)]() mutable {
-      std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
-
-      if (count_.fetch_sub(1, std::memory_order_acq_rel) > 1) {
-        if (auto loop = base::loop_ref_.lock()) {
-          backend_traits_type::send(loop->native_handle(), native_handle_.get());
-        }
-      }
-    });
-  }
+  void set_callback(callback_type&&) noexcept;
 
 private:
   std::unique_ptr<typename std::remove_pointer<native_handle_type>::type,

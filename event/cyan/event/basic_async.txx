@@ -72,5 +72,20 @@ void basic_async<BackendTraits>::send() noexcept {
   }
 }
 
+template<typename BackendTraits>
+void basic_async<BackendTraits>::set_callback(callback_type&& callback) noexcept {
+  if (callback) {
+    backend_traits_type::set_callback(native_handle_.get(), [this, callback = std::forward<callback_type>(callback)] () mutable {
+      callback();
+
+      if (count_.fetch_sub(1, std::memory_order_acq_rel) > 1) {
+        send();
+      }
+    });
+  } else {
+    backend_traits_type::set_callback(native_handle_.get(), nullptr);
+  }
+}
+
 } // v1
 } // cyan::event

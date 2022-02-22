@@ -39,6 +39,7 @@ public:
   using native_handle_type = typename backend_traits_type::native_handle_type;
   using loop_type = typename base::loop_type;
   using event_flags = typename backend_traits_type::event_flags;
+  using callback_type = typename backend_traits_type::callback_type;
 
   constexpr static event_flags event_read = backend_traits_type::event_read;
   constexpr static event_flags event_write = backend_traits_type::event_write;
@@ -56,12 +57,7 @@ public:
   event_flags get_event_flags() const noexcept;
   void set_file_descriptor(std::int32_t fd) noexcept;
   std::int32_t get_file_descriptor() const noexcept;
-
-  template<typename F, typename ...Args>
-  void set_callback(F&& f, Args&&... args) {
-    backend_traits_type::set_callback(native_handle_.get(), std::forward<F>(f),
-					std::forward<Args>(args)...);
-  }
+  void set_callback(callback_type&& callback) noexcept;
 
 private:
   std::unique_ptr<typename std::remove_pointer<native_handle_type>::type,
