@@ -23,7 +23,8 @@
  **/
 #pragma once
 
-#include <cyan/callable.h>
+#include <functional>
+
 #include <cyan/event/backend.h>
 #include <cyan/external/ev/ev.h>
 
@@ -34,29 +35,6 @@ namespace backend {
 struct libev {};
 
 } // backend
-
-namespace detail {
-
-struct state {
-  virtual ~state() = default;
-  virtual void invoke_callback() = 0;
-};
-
-template<typename C>
-struct state_impl : public state {
-  state_impl(C&& c) : callable_{ std::forward<C>(c) } {}
-  void invoke_callback() override { callable_(); }
-
-private:
-  C callable_;
-};
-		
-template<typename F, typename ...Args>
-static state* make_state(F&& f, Args&&... args) {
-  return new state_impl{ cyan::make_callable(std::forward<F>(f), std::forward<Args>(args)...) };
-}
-
-} // detail
 
 // TODO: Find a place to call ev_syserror_cb()
 
@@ -74,21 +52,17 @@ struct backend_traits<backend::libev> {
   struct async {
   public:
     using native_handle_type = struct ::ev_async*;
+    using callback_type = std::function<void()>;
 
     static native_handle_type allocate();
     static void deallocate(native_handle_type native_handle);
     
-    template<typename F, typename ...Args>
-    static void set_callback(native_handle_type native_handle, F&& f, Args&&... args) noexcept {
-      if (native_handle->data) delete static_cast<detail::state*>(native_handle->data);
-      native_handle->data = detail::make_state(std::forward<F>(f), std::forward<Args>(args)...);
-    }
-
     static void start(typename loop::native_handle_type loop, native_handle_type native_handle) noexcept;
     static void stop(typename loop::native_handle_type loop, native_handle_type native_handle) noexcept;
     static void send(typename loop::native_handle_type loop, native_handle_type native_handle) noexcept;
     static bool is_active(native_handle_type native_handle) noexcept;
     static bool is_pending(native_handle_type) noexcept;
+    static void set_callback(native_handle_type native_handle, callback_type&&) noexcept;
   
   private:
     static void async_callback(typename loop::native_handle_type, native_handle_type native_handle, int) noexcept;
@@ -97,6 +71,7 @@ struct backend_traits<backend::libev> {
   struct timer {
 	public:
     using native_handle_type = struct ::ev_timer*;
+    using callback_type = std::function<void()>;
 
     static native_handle_type allocate();
     static void deallocate(native_handle_type native_handle);
@@ -114,12 +89,7 @@ struct backend_traits<backend::libev> {
     }
 
     static std::chrono::milliseconds get_timeout(native_handle_type native_handle) noexcept;
-
-    template<typename F, typename ...Args>
-    static void set_callback(native_handle_type native_handle, F&& f, Args&&... args) noexcept {
-      if (native_handle->data) delete static_cast<detail::state*>(native_handle->data);
-      native_handle->data = detail::make_state(std::forward<F>(f), std::forward<Args>(args)...);
-    }
+    static void set_callback(native_handle_type native_handle, callback_type&&) noexcept;
 
   private:
     static void set_timeout(native_handle_type native_handle, double secs) noexcept;
@@ -129,6 +99,7 @@ struct backend_traits<backend::libev> {
   struct signal {
 	public:
     using native_handle_type = struct ::ev_signal*;
+    using callback_type = std::function<void()>;
 
     static native_handle_type allocate();
     static void deallocate(native_handle_type native_handle);
@@ -138,12 +109,7 @@ struct backend_traits<backend::libev> {
     static std::int32_t get_number(native_handle_type native_handle) noexcept;
     static bool is_active(native_handle_type native_handle) noexcept;
     static bool is_pending(native_handle_type) noexcept;
-
-    template<typename F, typename ...Args>
-    static void set_callback(native_handle_type native_handle, F&& f, Args&&... args) noexcept {
-      if (native_handle->data) delete static_cast<detail::state*>(native_handle->data);
-      native_handle->data = detail::make_state(std::forward<F>(f), std::forward<Args>(args)...);
-    }
+    static void set_callback(native_handle_type native_handle, callback_type&&) noexcept;
 
   private:
     static void signal_callback(typename loop::native_handle_type, native_handle_type native_handle, int) noexcept;
@@ -152,6 +118,7 @@ struct backend_traits<backend::libev> {
   struct idle {
 	public:
     using native_handle_type = struct ::ev_idle*;
+    using callback_type = std::function<void()>;
 
     static native_handle_type allocate();
     static void deallocate(native_handle_type native_handle);
@@ -159,16 +126,38 @@ struct backend_traits<backend::libev> {
     static void stop(typename loop::native_handle_type native_loop_handle, native_handle_type native_handle) noexcept;
     static bool is_active(native_handle_type native_handle) noexcept;
     static bool is_pending(native_handle_type) noexcept;
-
-    template<typename F, typename ...Args>
-    static void set_callback(native_handle_type native_handle, F&& f, Args&&... args) noexcept {
-      if (native_handle->data) delete static_cast<detail::state*>(native_handle->data);
-      native_handle->data = detail::make_state(std::forward<F>(f), std::forward<Args>(args)...);
-    }
+    static void set_callback(native_handle_type native_handle, callback_type&&) noexcept;
 
   private:
     static void idle_callback(typename loop::native_handle_type, native_handle_type native_handle, int) noexcept;
   };
+
+  struct io {
+  public:
+    using event_flags = std::int32_t;
+    using native_handle_type = struct ::ev_io*;
+    using callback_type = std::function<void(event_flags)>;
+
+    constexpr static event_flags event_read = EV_READ;
+    constexpr static event_flags event_write = EV_WRITE;
+    constexpr static event_flags event_error = EV_ERROR;
+
+    static native_handle_type allocate();
+    static void deallocate(native_handle_type native_handle);
+    static void start(typename loop::native_handle_type native_loop_handle, native_handle_type native_handle) noexcept;
+    static void stop(typename loop::native_handle_type native_loop_handle, native_handle_type native_handle) noexcept;
+    static bool is_active(native_handle_type native_handle) noexcept;
+    static bool is_pending(native_handle_type) noexcept;
+    static void set_file_descriptor(native_handle_type naitve_handle, std::int32_t fd) noexcept;
+    static std::int32_t get_file_descriptor(native_handle_type native_handle) noexcept;
+    static void set_event_flags(native_handle_type native_handle, event_flags ev) noexcept;
+    static event_flags get_event_flags(native_handle_type native_handle) noexcept;
+    static void set_callback(native_handle_type native_handle, callback_type&&) noexcept;
+
+  private:
+    static void io_callback(typename loop::native_handle_type, native_handle_type native_handle, int revents) noexcept;
+  };
+
 };
 
 } // cyan::event

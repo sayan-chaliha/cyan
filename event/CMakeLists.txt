@@ -10,6 +10,7 @@ set(HEADERS
     cyan/event/basic_timer.h
     cyan/event/basic_signal.h
     cyan/event/basic_idle.h
+    cyan/event/basic_io.h
     cyan/event/backend.h
     cyan/event/backend_libev.h
     cyan/external/ev/ev.h
@@ -23,7 +24,7 @@ set(SOURCES_TEST
     test/event_tests.cxx
 )
 
-add_library(${LIB_NAME} STATIC ${SOURCES})
+add_library(${LIB_NAME} SHARED ${SOURCES})
 target_link_libraries(${LIB_NAME} PUBLIC ${PROJECT_NAME}_common)
 
 target_include_directories(${LIB_NAME} PUBLIC

@@ -29,25 +29,26 @@
 #include <utility>
 #include <unordered_map>
 #include <functional>
+#include <stdexcept>
 
 #include <cyan/utility.h>
 #include <cyan/noncopyable.h>
-#include <cyan/event/basic_loop.h>
 #include <cyan/event/basic_timer.h>
 
 namespace cyan::event {
+inline namespace v1 {
 
-template<typename T>
+template<typename BackendTraits>
 class basic_timer_wheel : public cyan::noncopyable {
 public:
-  using backend_traits_type = T;
   using request_id_type = std::size_t;
-  using timer_type = basic_timer<backend_traits_type>;
+  using timer_type = basic_timer<BackendTraits>;
+  using loop_type = typename timer_type::loop_type;
   constexpr static auto default_resolution = std::chrono::milliseconds(100);
 
 private:
 	struct request {
-    virtual ~request() = default;
+    virtual ~request() noexcept = default;
 
     request_id_type id;
     bool is_cancelled;
@@ -58,7 +59,7 @@ private:
 
   template<typename C>
   struct request_impl : public request {
-    request_impl(C&& callable) : callable_{ std::forward<C>(callable) } {}
+    request_impl(C&& callable) noexcept : callable_{ std::forward<C>(callable) } {}
 
     void process() override {
       callable_();
@@ -74,18 +75,19 @@ private:
   }
 
   struct basic_timer_wheel_impl {
-    basic_timer_wheel_impl(std::weak_ptr<basic_loop<backend_traits_type>> const& loop_ref) : timer{ loop_ref },
+    basic_timer_wheel_impl(std::weak_ptr<loop_type> const& loop) : timer{ loop },
           request_id_{ 0 } {
     }
 
-    request_id_type get_next_request_id() {
+    request_id_type get_next_request_id() noexcept {
       auto id = request_id_;
       request_id_ = (request_id_ + 1) & std::numeric_limits<request_id_type>::max();
       return id;
     }
 
     template<typename R, typename D>
-    static std::chrono::steady_clock::time_point get_absolute_expiry(std::chrono::duration<R, D> const& timeout) {
+    static std::chrono::steady_clock::time_point
+    get_absolute_expiry(std::chrono::duration<R, D> const& timeout) noexcept {
       auto const now = std::chrono::steady_clock::now();
       return now + timeout;
     }
@@ -99,20 +101,21 @@ private:
   };
 
 public:
-  basic_timer_wheel(std::weak_ptr<basic_loop<backend_traits_type>> const& loop_ref)
-        : impl_{ std::make_unique<basic_timer_wheel_impl>(loop_ref) } {
+  basic_timer_wheel(std::weak_ptr<loop_type> const& loop)
+        : impl_{ std::make_unique<basic_timer_wheel_impl>(loop) } {
     impl_->timer.set_timeout(default_resolution);
     impl_->timer.set_callback([this] { bookkeeper(); });
   }
 
   template<typename R, typename D>
-  basic_timer_wheel(std::weak_ptr<basic_loop<backend_traits_type>> const& loop_ref,
+  basic_timer_wheel(std::weak_ptr<loop_type> const& loop,
         std::chrono::duration<R, D> const& res)
-        : basic_timer_wheel(loop_ref) {
+        : basic_timer_wheel(loop) {
     impl_->timer.set_timeout(res);
   }
 
-  explicit basic_timer_wheel(basic_timer_wheel&& other) : impl_{ std::move(other.impl_) } {
+  explicit basic_timer_wheel(basic_timer_wheel&& other) noexcept : impl_{ std::move(other.impl_) } {
+    impl_->timer.set_callback([this] { bookkeeper(); });
     other.impl_ = nullptr;
   }
 
@@ -120,11 +123,18 @@ public:
     if (impl_) stop();
   }
 
-  void start() {
+  basic_timer_wheel& operator =(basic_timer_wheel&& other) noexcept {
+    impl_ = std::move(other.impl_);
+    impl_->timer.set_callback([this] { bookkeeper(); });
+    other.impl_ = nullptr;
+    return *this;
+  }
+
+  void start() noexcept {
     if (impl_->requests.size() && !impl_->timer.is_active()) impl_->timer.start();
   }
 
-  void stop() {
+  void stop() noexcept {
 		impl_->timer.stop();
   }
 
@@ -148,6 +158,8 @@ public:
     auto it = impl_->requests.find(request_id);
     if (it != impl_->requests.end()) {
       it->second->is_cancelled = true;
+    } else {
+      throw std::out_of_range{ "timer_wheel::cancel: request id not found" };
     }
   }
 
@@ -155,14 +167,16 @@ public:
     auto it = impl_->requests.find(request_id);
     if (it != impl_->requests.end()) {
       it->second->expiry = impl_->get_absolute_expiry(it->second->timeout);
+    } else {
+      throw std::out_of_range{ "timer_wheel::reset: request id not found" };
     }
   }
 
-  bool is_active() const {
+  bool is_active() const noexcept {
     return impl_->timer.is_active();
   }
 
-  bool is_pending() const {
+  bool is_pending() const noexcept {
     return !impl_->requests.empty();
   }
 
@@ -194,4 +208,5 @@ private:
   std::unique_ptr<basic_timer_wheel_impl> impl_;
 };
 
+} // v1
 } // cyan::event

@@ -23,37 +23,46 @@
  **/
 #pragma once
 
-#include <memory>
-#include <thread>
+#include <string>
 
-#include <cyan/noncopyable.h>
+#include <cyan/net/detail/address.h>
 
-namespace cyan::event {
-inline namespace v1 {
+namespace cyan::net::ip {
 
-template<typename BackendTraits>
-class basic_loop : public cyan::noncopyable {
+class address_v4 {
 public:
-  using backend_traits_type = typename BackendTraits::loop;
-  using native_handle_type = typename backend_traits_type::native_handle_type;
+  using uint_type = std::uint_least32_t;
 
-  basic_loop();
-  explicit basic_loop(basic_loop&& other) noexcept;
-  ~basic_loop();
+  address_v4() noexcept;
+  address_v4(uint_type addr) noexcept;
+  address_v4(address_v4 const&) noexcept = default;
+  address_v4(address_v4&&) noexcept = default;
 
-  basic_loop& operator =(basic_loop&& other) noexcept;
+  address_v4& operator =(address_v4 const&) noexcept = default;
+  address_v4& operator =(address_v4&&)  noexcept = default;
 
-  native_handle_type native_handle() const noexcept;
+  uint_type to_uint() const noexcept;
+  std::string to_string() const;
 
-  void start() noexcept;
-  void stop() noexcept;
-  std::thread::id get_owner_thread_id() const noexcept;
+  bool is_unspecified() const noexcept;
+  bool is_loopback() const noexcept;
+  bool is_multicast() const noexcept;
 
 private:
-  std::unique_ptr<typename std::remove_pointer<native_handle_type>::type,
-      void (*)(native_handle_type)> native_handle_;
-  std::thread::id owner_thread_;
+  friend address_v4 make_address_v4(std::string_view);
+  friend address_v4 make_address_v4(std::string_view, std::error_code&);
+
+  cyan::net::detail::in4_addr_type addr_;
 };
 
-} // v1
-} // cyan::event
+address_v4 make_address_v4(std::string_view addr);
+address_v4 make_address_v4(std::string_view addr, std::error_code& ec);
+
+template <typename Elem, typename Traits>
+std::basic_ostream<Elem, Traits>& operator<<(
+    std::basic_ostream<Elem, Traits>& os, const address_v4& addr)
+{
+  return os << addr.to_string().c_str();
+}
+
+} // cyan::net::ip

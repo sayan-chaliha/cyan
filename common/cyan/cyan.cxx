@@ -29,30 +29,30 @@
 
 namespace cyan::version {
 
-std::int_least8_t major() {
+constexpr CYAN_API std::int_least8_t major() noexcept {
   return CYAN_VERSION_MAJOR;
 }
 
-std::int_least8_t minor() {
+constexpr CYAN_API std::int_least8_t minor() noexcept {
   return CYAN_VERSION_MINOR;
 }
 
-std::int_least8_t patch() {
+constexpr CYAN_API std::int_least8_t patch() noexcept {
   return CYAN_VERSION_PATCH;
 }
 
-std::int_least8_t tweak() {
+constexpr CYAN_API std::int_least8_t tweak() noexcept {
     return CYAN_VERSION_TWEAK;
 }
 
-char const* str() {
+constexpr CYAN_API char const* str() noexcept {
   return "" STR(CYAN_VERSION_MAJOR) "."
          STR(CYAN_VERSION_MINOR) "."
          STR(CYAN_VERSION_PATCH) "."
          STR(CYAN_VERSION_TWEAK);
 }
 
-wchar_t const* wstr() {
+constexpr CYAN_API wchar_t const* wstr() noexcept {
   return L"" STR(CYAN_VERSION_MAJOR) "."
          STR(CYAN_VERSION_MINOR) "."
          STR(CYAN_VERSION_PATCH) "."

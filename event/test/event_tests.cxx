@@ -140,19 +140,18 @@ TEST_F(event_tests, signal) {
   cyan::event::signal signal{ cyan::event::get_main_loop() };
   auto promise = std::promise<void>{};
 
-  signal.set_callback([&promise] {
+  signal.set_callback([&promise] () {
     cyan::event::get_main_loop()->stop();
     promise.set_value();
   });
+  signal.set_number(SIGINT);
+  ASSERT_EQ(signal.get_number(), SIGINT);
 
   EXPECT_FALSE(signal.is_active());
   signal.start();
   EXPECT_TRUE(signal.is_active());
 
-  std::thread thread{[] {
-    raise(SIGINT);
-  }};
-  thread.detach();
+  ev_feed_signal(SIGINT);
 
   cyan::event::get_main_loop()->start();
   ASSERT_EQ(promise.get_future().wait_for(0ms), std::future_status::ready);

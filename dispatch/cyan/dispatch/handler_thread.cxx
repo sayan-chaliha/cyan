@@ -130,7 +130,7 @@ private:
     queued_event_->start();
     timer_wheel_->start();
 
-    queued_event_->set_callback(&handler_thread_impl::process_queue, this);
+    queued_event_->set_callback(std::bind(&handler_thread_impl::process_queue, this));
   }
 
   void process_queue() {

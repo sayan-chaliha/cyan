@@ -21,15 +21,45 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  **/
-#include <cstdint>
+#pragma once
 
-namespace cyan::version {
+#include <cyan/net/detail/platform.h>
+#include <cyan/net/ip/basic_endpoint.h>
+#include <cyan/net/ip/basic_stream_socket.h>
+#include <cyan/net/ip/basic_socket_acceptor.h>
 
-constexpr std::int_least8_t major() noexcept;
-constexpr std::int_least8_t minor() noexcept;
-constexpr std::int_least8_t patch() noexcept;
-constexpr std::int_least8_t tweak() noexcept;
-constexpr char const* str() noexcept;
-constexpr wchar_t const* wstr() noexcept;
+namespace cyan::net::ip {
+
+class tcp {
+public:
+  using endpoint = basic_endpoint<tcp>;
+  using socket = basic_stream_socket<tcp>;
+  using acceptor = basic_socket_acceptor<tcp>;
+
+  static tcp v4() noexcept {
+    return tcp{ CYAN_OS_DEF(AF_INET) };
+  }
+
+  static tcp v6() noexcept {
+    return tcp{ CYAN_OS_DEF(AF_INET6) };
+  }
+
+  std::int32_t family() const noexcept {
+    return family_;
+  }
+
+  constexpr std::int32_t type() const noexcept {
+    return CYAN_OS_DEF(SOCK_STREAM);
+  }
+
+  constexpr std::int32_t protocol() const noexcept {
+    return CYAN_OS_DEF(IPPROTO_TCP);
+  }
+
+protected:
+  tcp(std::int32_t family) noexcept : family_{ family } {}
+
+  std::int32_t family_;
+};
 
 }

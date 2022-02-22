@@ -12,6 +12,9 @@ target_link_libraries(active_object2 cyan_dispatch)
 add_executable(async async.cxx)
 target_link_libraries(async cyan_dispatch)
 
+add_executable(socket socket.cxx)
+target_link_libraries(socket cyan_net)
+
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIR})
     add_executable(boost_asio_benchmark boost_asio_benchmark.cxx)
